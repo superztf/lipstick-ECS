@@ -120,7 +120,7 @@ export class EntityAdmin {
                 }
             }
             if (pass) {
-                yield c1 as T;
+                yield this.GetComponentByEntity(c1.entity, T_type) as T;
             }
         }
     }
