@@ -112,8 +112,14 @@ export class EntityAdmin {
         });
         const top = length_info.shift() as CInfo;
         for (let c1 of this.GetComponents(top.type)) {
+            let pass = true;
             for (let info of length_info) {
-                let c2 = this.GetComponentByEntity(c1.entity, info.type) as Component;
+                if (!this.GetComponentByEntity(c1.entity, info.type)) {
+                    pass = false;
+                    break;
+                }
+            }
+            if (pass) {
                 yield c1 as T;
             }
         }
