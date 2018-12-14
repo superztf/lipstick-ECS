@@ -57,6 +57,7 @@ export class EntityAdmin {
                     this.components[c.constructor.name] = new Set();
                 }
                 this.components[c.constructor.name].add(e);
+                (c as any).m_entity = e;
             }
         } else {
             logger.error(`assign ${cs} to a invalid entity ${e}`);

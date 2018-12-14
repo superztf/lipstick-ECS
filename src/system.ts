@@ -1,7 +1,7 @@
 import { Component } from "./component";
 import { EntityAdmin } from "./EntityAdmin";
 
-abstract class System {
+export abstract class System {
     protected admin: EntityAdmin;
 
     constructor(a: EntityAdmin) {

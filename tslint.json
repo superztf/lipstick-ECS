@@ -11,7 +11,13 @@
             true,
             180
         ],
-        "ordered-imports": false
+        "ordered-imports": false,
+        "max-classes-per-file": false,
+        "semicolon": [
+            true,
+            "always",
+            "ignore-bound-class-methods"
+        ]
     },
     "rulesDirectory": []
 }
