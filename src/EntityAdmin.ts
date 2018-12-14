@@ -1,5 +1,5 @@
 import { Component } from "./component";
-import { Match } from "./Match";
+
 export type Entity = number;
 export type ComponentName = string;
 type CLASS<T> = new (...args: any) => T;
@@ -12,12 +12,23 @@ export class EntityAdmin {
     private components: { [index: string]: Set<Entity> } = {};
     private next_entity: Entity = 0;
     private entities: { [index: number]: { [index: string]: Component } } = {};
+    private dead_ents: Set<Entity> = new Set();
 
     public CreateEntity(...args: Component[]): Entity {
         const new_ent = ++this.next_entity;
         this.entities[new_ent] = {};
         this.AssignComponent(new_ent, ...args);
         return new_ent;
+    }
+
+    public DeleteEntity(e: Entity, immediate = true): void {
+        if (this.ValidEntity(e)) {
+            if (immediate) {
+                this.delete_ent(e);
+            } else {
+                this.dead_ents.add(e);
+            }
+        }
     }
 
     public GetComponentByEntity<T extends Component>(entity: Entity, cclass: CLASS<T>): T | undefined {
@@ -28,7 +39,10 @@ export class EntityAdmin {
     }
 
     public ValidEntity(e: Entity): boolean {
-        return !!this.entities[e];
+        if (this.dead_ents.has(e) || !this.entities[e]) {
+            return false;
+        }
+        return true;
     }
 
     public BeforeAssignComponent(e: Entity, c: Comment) {
@@ -37,7 +51,7 @@ export class EntityAdmin {
 
     public AssignComponent(e: Entity, ...cs: Component[]): void {
         if (this.ValidEntity(e)) {
-            for (let c of cs) {
+            for (const c of cs) {
                 this.entities[e][c.constructor.name] = c;
                 if (!this.components[c.constructor.name]) {
                     this.components[c.constructor.name] = new Set();
@@ -57,7 +71,6 @@ export class EntityAdmin {
 
     }
 
-
     public RemoveComponent<T extends Component>(e: Entity, cclass: CLASS<T>) {
         if (this.entities[e]) {
             delete this.entities[e][cclass.name];
@@ -72,7 +85,6 @@ export class EntityAdmin {
 
     }
 
-
     public HasComponet(e: Entity, c: Component): boolean {
         if (this.entities[e]) {
             if (this.entities[e][c.constructor.name]) {
@@ -84,7 +96,7 @@ export class EntityAdmin {
 
     public *GetComponents<T extends Component>(cclass: CLASS<T>): IterableIterator<T> {
         if (this.components[cclass.name]) {
-            for (let e of this.components[cclass.name].values()) {
+            for (const e of this.components[cclass.name].values()) {
                 if (this.entities[e] && this.entities[e][cclass.name]) {
                     yield this.entities[e][cclass.name] as T;
                 }
@@ -92,28 +104,26 @@ export class EntityAdmin {
         }
     }
 
-    // public *GetComponentTuple<C1, C2>(...cclass: (new () => Component)[]): IterableIterator<[C1, C2]>;
-    // public *GetComponentTuple<C1>(...cclass: (new () => Component)[]): IterableIterator<[C1]>;
-    public *GetComponentsByTuple<T extends Component>(...cclass: [CLASS<T>, ...CLASS<Component>[]]): IterableIterator<T> {
-        type CInfo = { type: CLASS<Component>, len: number };
+    public *GetComponentsByTuple<T extends Component>(...cclass: [CLASS<T>, ...Array<CLASS<Component>>]): IterableIterator<T> {
+        interface ICInfo { type: CLASS<Component>; len: number; }
         if (cclass.length <= 1) {
             return this.GetComponents(cclass[0]);
         }
         const T_type = cclass[0];
-        let length_info: CInfo[] = [];
-        for (let c of cclass) {
+        const length_info: ICInfo[] = [];
+        for (const c of cclass) {
             if (!this.components[c.name]) {
                 return;
             }
-            length_info.push({ type: c, len: this.components[c.name].size })
+            length_info.push({ type: c, len: this.components[c.name].size });
         }
         length_info.sort((a, b) => {
             return a.len - b.len;
         });
-        const top = length_info.shift() as CInfo;
-        for (let c1 of this.GetComponents(top.type)) {
+        const top = length_info.shift() as ICInfo;
+        for (const c1 of this.GetComponents(top.type)) {
             let pass = true;
-            for (let info of length_info) {
+            for (const info of length_info) {
                 if (!this.GetComponentByEntity(c1.entity, info.type)) {
                     pass = false;
                     break;
@@ -123,5 +133,14 @@ export class EntityAdmin {
                 yield this.GetComponentByEntity(c1.entity, T_type) as T;
             }
         }
+    }
+
+    private delete_ent(e: Entity) {
+        for (const cname in this.entities[e]) {
+            if (this.components[cname]) {
+                this.components[cname].delete(e);
+            }
+        }
+        delete this.entities[e];
     }
 }

@@ -1,0 +1,8 @@
+node_modules
+tests
+src
+package-lock.json
+.travis.yml
+tslint.json
+.git/
+tsconfig.json

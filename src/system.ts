@@ -1,7 +1,6 @@
 import { Component } from "./component";
 import { EntityAdmin } from "./EntityAdmin";
 
-
 abstract class System {
     protected admin: EntityAdmin;
 

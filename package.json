@@ -1,16 +1,29 @@
 {
   "name": "lipstick-ecs",
   "version": "1.0.0",
-  "description": "A entity-component-system framework in typescript.",
+  "description": "A pretty fast entity-component-system framework in typescript.",
+  "keywords": [
+    "entity component system",
+    "ECS",
+    "node",
+    "nodejs",
+    "typescript"
+  ],
   "main": "bin/index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "node_modules/.bin/jest"
   },
   "author": "zhengtengfei",
   "license": "MIT",
-  "keywords": [],
-  "repository": "",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/superztf/lipstick-ECS.git"
+  },
   "devDependencies": {
-    "@types/node": "^10.12.14"
+    "@types/jest": "^23.3.10",
+    "@types/node": "^10.12.14",
+    "jest": "^23.6.0",
+    "ts-jest": "^23.10.5",
+    "typescript": "^3.2.2"
   }
 }
