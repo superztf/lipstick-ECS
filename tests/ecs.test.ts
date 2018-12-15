@@ -26,9 +26,6 @@ class ComponentC extends Component {
 
 class SystemA extends System {
     public Update(timeStep: number): void {
-        for (const c of this.admin.GetComponentsByTuple(ComponentC, ComponentB)) {
-            this.admin.RemoveComponent(c.entity, ComponentC);
-        }
     }
 }
 
@@ -79,15 +76,16 @@ describe("esc test", () => {
             throw (new Error("expect ComponentC"));
         }
     });
-    it("system update", () => {
-        const s = new SystemA(admin);
-        admin.CreateEntity(new ComponentB(), new ComponentC(1, "java"));
-        admin.CreateEntity(new ComponentC(1, "sql"));
-        admin.CreateEntity(new ComponentB(), new ComponentC(1, "python"));
-        admin.CreateEntity(new ComponentC(1, "typescript"));
-        admin.CreateEntity(new ComponentC(1, "javascript"));
-        admin.CreateEntity(new ComponentB(), new ComponentC(1, "lua"));
-        admin.CreateEntity(new ComponentC(1, "cpp"));
-        s.Update(1);
+    it("add system", () => {
+        admin.AddSystem(SystemA, 3);
+        admin.AddSystem(SystemA, 1);
+        admin.AddSystem(SystemA, 2);
+        admin.AddSystem(SystemA);
+        let i = 3;
+        for (const s of (admin as any).systems as SystemA[]) {
+            expect(s.priority).toBe(i);
+            --i;
+        }
+        admin.UpdateSystems(0);
     });
 });

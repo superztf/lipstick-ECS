@@ -1,4 +1,5 @@
 import { Component } from "./component";
+import { System } from "./system";
 
 export type Entity = number;
 export type ComponentName = string;
@@ -9,10 +10,25 @@ const logger = console;
 export const G_ENTITY: Entity = 0;
 
 export class EntityAdmin {
-    private components: { [index: string]: Set<Entity> } = {};
     private next_entity: Entity = 0;
     private entities: { [index: number]: { [index: string]: Component } } = {};
     private dead_ents: Set<Entity> = new Set();
+    private components: { [index: string]: Set<Entity> } = {};
+    private systems: System[] = [];
+
+    // bigger number means higher priority
+    public AddSystem(sclass: CLASS<System>, priority: number = 0) {
+        this.systems.push(new sclass(this, priority));
+        this.systems.sort((a: System, b: System) => {
+            return b.priority - a.priority;
+        });
+    }
+
+    public UpdateSystems(timeDelta: number) {
+        for (const s of this.systems) {
+            s.Update(timeDelta);
+        }
+    }
 
     public CreateEntity(...args: Component[]): Entity {
         const new_ent = ++this.next_entity;
