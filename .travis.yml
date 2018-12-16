@@ -11,7 +11,6 @@ cache:
 install:
  - npm install
 script:
-  - tslint -p .
   - tsc -p .
   - npm t
 after_script:
