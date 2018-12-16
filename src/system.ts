@@ -1,4 +1,3 @@
-import { Component } from "./component";
 import { EntityAdmin } from "./EntityAdmin";
 
 export abstract class System {

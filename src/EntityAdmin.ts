@@ -3,9 +3,6 @@ import { System } from "./system";
 import { present, CLASS } from "./utils";
 
 export type Entity = number;
-export type ComponentName = string;
-
-const logger = console;
 
 export class EntityAdmin {
     private next_entity: Entity = 0;
@@ -68,7 +65,7 @@ export class EntityAdmin {
         return new_ent;
     }
 
-    public DeleteEntity(e: Entity, immediate = true): void {
+    public DeleteEntity(e: Entity): void {
         if (this.ValidEntity(e)) {
             for (const cname in this.entities[e]) {
                 if (this.components[cname]) {
@@ -103,8 +100,6 @@ export class EntityAdmin {
                 this.components[c.constructor.name].add(e);
                 (c as any).m_entity = e;
             }
-        } else {
-            logger.error(`assign ${cs} to a invalid entity ${e}`);
         }
     }
 
@@ -121,8 +116,8 @@ export class EntityAdmin {
         }
     }
 
-    public HasComponet(e: Entity, c: Component): boolean {
-        if (this.entities[e] && this.entities[e][c.constructor.name]) {
+    public HasComponet(e: Entity, c: CLASS<Component>): boolean {
+        if (this.entities[e] && this.entities[e][c.name]) {
             return true;
         }
         return false;

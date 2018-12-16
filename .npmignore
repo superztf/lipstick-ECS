@@ -6,3 +6,6 @@ package-lock.json
 tslint.json
 .git/
 tsconfig.json
+.gitignore
+jest.config.js
+coverage

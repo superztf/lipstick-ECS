@@ -1,6 +1,6 @@
 {
   "name": "lipstick-ecs",
-  "version": "1.0.0",
+  "version": "0.0.1",
   "description": "A pretty fast entity-component-system framework in typescript.",
   "keywords": [
     "entity component system",
@@ -9,7 +9,8 @@
     "nodejs",
     "typescript"
   ],
-  "main": "bin/index.js",
+  "main": "./lib/index.js",
+  "types": "./types/index.d.ts",
   "scripts": {
     "test": "node_modules/.bin/jest"
   },
@@ -22,6 +23,7 @@
   "devDependencies": {
     "@types/jest": "^23.3.10",
     "@types/node": "^10.12.14",
+    "coveralls": "^3.0.2",
     "jest": "^23.6.0",
     "ts-jest": "^23.10.5",
     "typescript": "^3.2.2"
