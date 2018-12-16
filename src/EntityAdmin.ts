@@ -1,20 +1,42 @@
 import { Component } from "./component";
 import { System } from "./system";
+import { present, CLASS } from "./utils";
 
 export type Entity = number;
 export type ComponentName = string;
-type CLASS<T> = new (...args: any) => T;
 
 const logger = console;
 
-export const G_ENTITY: Entity = 0;
-
 export class EntityAdmin {
     private next_entity: Entity = 0;
-    private entities: { [index: number]: { [index: string]: Component } } = {};
-    private dead_ents: Set<Entity> = new Set();
+    private entities: { [index: number]: { [index: string]: Component } } = { 0: {} };
     private components: { [index: string]: Set<Entity> } = {};
     private systems: System[] = [];
+    private deferments: Array<{ func: Function, args: any[] }> = [];
+    private pubcoms: { [index: string]: Component } = {};
+    private lastupdate: number = present();
+    private running = false;
+
+    public start(): void {
+        this.lastupdate = present();
+        this.running = true;
+    }
+
+    public stop(): void {
+        this.running = false;
+    }
+
+    public SetPubComponent(c: Component) {
+        this.pubcoms[c.constructor.name] = c;
+    }
+
+    public GetPubComponent<T extends Component>(cclass: CLASS<T>): undefined | T {
+        return this.pubcoms[cclass.name] as T;
+    }
+
+    public PushDeferment(func: Function, ...args: any) {
+        this.deferments.push({ func, args });
+    }
 
     // bigger number means higher priority
     public AddSystem(sclass: CLASS<System>, priority: number = 0) {
@@ -24,26 +46,36 @@ export class EntityAdmin {
         });
     }
 
-    public UpdateSystems(timeDelta: number) {
-        for (const s of this.systems) {
-            s.Update(timeDelta);
+    public UpdateSystems() {
+        if (this.running) {
+            const now = present();
+            const delta = now - this.lastupdate;
+            this.lastupdate = now;
+            for (const s of this.systems) {
+                s.Update(delta);
+            }
+            for (const delay of this.deferments) {
+                delay.func(...delay.args);
+            }
+            this.deferments = [];
         }
     }
 
     public CreateEntity(...args: Component[]): Entity {
         const new_ent = ++this.next_entity;
         this.entities[new_ent] = {};
-        this.AssignComponent(new_ent, ...args);
+        this.AssignComponents(new_ent, ...args);
         return new_ent;
     }
 
     public DeleteEntity(e: Entity, immediate = true): void {
         if (this.ValidEntity(e)) {
-            if (immediate) {
-                this.delete_ent(e);
-            } else {
-                this.dead_ents.add(e);
+            for (const cname in this.entities[e]) {
+                if (this.components[cname]) {
+                    this.components[cname].delete(e);
+                }
             }
+            delete this.entities[e];
         }
     }
 
@@ -55,18 +87,14 @@ export class EntityAdmin {
     }
 
     public ValidEntity(e: Entity): boolean {
-        if (this.dead_ents.has(e) || !this.entities[e]) {
-            return false;
+        if (this.entities[e]) {
+            return true;
         }
-        return true;
+        return false;
     }
 
-    public BeforeAssignComponent(e: Entity, c: Comment) {
-
-    }
-
-    public AssignComponent(e: Entity, ...cs: Component[]): void {
-        if (this.ValidEntity(e)) {
+    public AssignComponents(e: Entity, ...cs: Component[]): void {
+        if (this.entities[e]) {
             for (const c of cs) {
                 this.entities[e][c.constructor.name] = c;
                 if (!this.components[c.constructor.name]) {
@@ -80,33 +108,22 @@ export class EntityAdmin {
         }
     }
 
-    public AfterAssignComponent(e: Entity, c: Comment) {
-
-    }
-
-    public BeforeRemoveComponent(e: Entity, c: Comment) {
-
-    }
-
-    public RemoveComponent<T extends Component>(e: Entity, cclass: CLASS<T>) {
+    public RemoveComponents<T extends Component>(e: Entity, ...cclass: Array<CLASS<T>>) {
         if (this.entities[e]) {
-            delete this.entities[e][cclass.name];
+            for (const c of cclass) {
+                delete this.entities[e][c.name];
+            }
         }
-        if (this.components[cclass.name]) {
-            this.components[cclass.name].delete(e);
+        for (const c of cclass) {
+            if (this.components[c.name]) {
+                this.components[c.name].delete(e);
+            }
         }
-
-    }
-
-    public AfterRemoveComponent(e: Entity, c: Comment) {
-
     }
 
     public HasComponet(e: Entity, c: Component): boolean {
-        if (this.entities[e]) {
-            if (this.entities[e][c.constructor.name]) {
-                return true;
-            }
+        if (this.entities[e] && this.entities[e][c.constructor.name]) {
+            return true;
         }
         return false;
     }
@@ -114,7 +131,7 @@ export class EntityAdmin {
     public *GetComponents<T extends Component>(cclass: CLASS<T>): IterableIterator<T> {
         if (this.components[cclass.name]) {
             for (const e of this.components[cclass.name].values()) {
-                if (this.entities[e] && this.entities[e][cclass.name]) {
+                if (this.ValidEntity(e) && this.entities[e][cclass.name]) {
                     yield this.entities[e][cclass.name] as T;
                 }
             }
@@ -150,14 +167,5 @@ export class EntityAdmin {
                 yield this.GetComponentByEntity(c1.entity, T_type) as T;
             }
         }
-    }
-
-    private delete_ent(e: Entity) {
-        for (const cname in this.entities[e]) {
-            if (this.components[cname]) {
-                this.components[cname].delete(e);
-            }
-        }
-        delete this.entities[e];
     }
 }

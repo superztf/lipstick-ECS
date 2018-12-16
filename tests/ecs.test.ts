@@ -29,7 +29,7 @@ class SystemA extends System {
     }
 }
 
-describe("esc test", () => {
+describe("ecs test", () => {
     const admin = new EntityAdmin();
     it("create entity", () => {
         const e1 = admin.CreateEntity();
@@ -68,12 +68,12 @@ describe("esc test", () => {
     it("assgin component", () => {
         const key = 2333;
         const e = admin.CreateEntity();
-        admin.AssignComponent(e, new ComponentC(key, "world"));
+        admin.AssignComponents(e, new ComponentC(key, "world"));
         const c = admin.GetComponentByEntity(e, ComponentC);
         if (c) {
             expect(c.attr1).toBe(key);
         } else {
-            throw (new Error("expect ComponentC"));
+            throw (new Error("assgin component err: expect ComponentC"));
         }
     });
     it("add system", () => {
@@ -86,6 +86,45 @@ describe("esc test", () => {
             expect(s.priority).toBe(i);
             --i;
         }
-        admin.UpdateSystems(0);
+        admin.UpdateSystems();
+    });
+    it("public components", () => {
+        const n = 666;
+        expect(admin.GetPubComponent(ComponentC)).toBeUndefined();
+        admin.SetPubComponent(new ComponentC(n, ""));
+        const c = admin.GetPubComponent(ComponentC);
+        if (c) {
+            expect(c.attr1).toBe(n);
+        } else {
+            throw (new Error("public components err: expect ComponentC"));
+        }
+    });
+    it("push deferment", () => {
+        let value = 0;
+        const delay_do = (a: number, b: number) => { value += (a + b); };
+        admin.PushDeferment(delay_do, 2, 5);
+        admin.start();
+        expect(value).toBe(0);
+        admin.UpdateSystems();
+        expect(value).toBe(7);
+        admin.UpdateSystems();
+        expect(value).toBe(7);
+    });
+    it("component method", () => {
+        const coma = new ComponentA();
+        const key = 32546;
+        admin.CreateEntity(coma, new ComponentC(key, ""));
+        const comc = coma.GetSibling(admin, ComponentC);
+        if (comc) {
+            expect(comc.attr1).toBe(key);
+        } else {
+            throw (new Error("component method err:ComponentC should be exist"));
+        }
+
+        expect(coma.GetSibling(admin, ComponentB)).toBeUndefined();
+        coma.AddSibling(admin, new ComponentB());
+        expect(!!coma.GetSibling(admin, ComponentB)).toBeTruthy();
+        coma.RemoveSibling(admin, ComponentB);
+        expect(!!coma.GetSibling(admin, ComponentB)).toBeFalsy();
     });
 });

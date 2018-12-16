@@ -17,6 +17,10 @@
             true,
             "always",
             "ignore-bound-class-methods"
+        ],
+        "ban-types": [
+            true,
+            "Function"
         ]
     },
     "rulesDirectory": []
