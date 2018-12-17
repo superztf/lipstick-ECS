@@ -12,6 +12,10 @@ export class Component {
         return admin.GetComponentByEntity(this.m_entity, cclass);
     }
 
+    public SureSibling<T extends Component>(admin: EntityAdmin, cclass: CLASS<T>): T {
+        return admin.GetComponentByEntity(this.m_entity, cclass) as T;
+    }
+
     public AddSibling(admin: EntityAdmin, ...cs: Component[]): void {
         admin.AssignComponents(this.m_entity, ...cs);
     }

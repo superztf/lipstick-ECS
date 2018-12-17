@@ -43,9 +43,9 @@ export class EntityAdmin {
         });
     }
 
-    public UpdateSystems() {
+    public UpdateSystems(nowtime?: number) {
         if (this.running) {
-            const now = present();
+            const now = nowtime ? nowtime : present();
             const delta = now - this.lastupdate;
             this.lastupdate = now;
             for (const s of this.systems) {
