@@ -168,6 +168,7 @@ describe("ecs test", () => {
         expect(coma.GetSibling(admin, ComponentB)).toBeUndefined();
         coma.AddSibling(admin, new ComponentB());
         expect(!!coma.GetSibling(admin, ComponentB)).toBeTruthy();
+        expect(!!coma.SureSibling(admin, ComponentB)).toBeTruthy();
         coma.RemoveSibling(admin, ComponentB);
         expect(!!coma.GetSibling(admin, ComponentB)).toBeFalsy();
     });
@@ -186,7 +187,7 @@ describe("ecs test", () => {
         const e6 = admin.CreateEntity(new ComponentA(), new ComponentB(), new ComponentC(100, ""), new ComponentD(100)); // wb
         const e7 = admin.CreateEntity(new ComponentA(), new ComponentB(), new ComponentC(101, ""), new ComponentD(100)); // yb
         const e8 = admin.CreateEntity(new ComponentA(), new ComponentB(), new ComponentC(101, ""), new ComponentD(100)); // yb
-        admin.UpdateSystems();
+        admin.UpdateSystems(1);
 
         const cd2 = admin.GetComponentByEntity(e2, ComponentD);
         if (cd2) {

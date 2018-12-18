@@ -6,6 +6,10 @@
 [![NpmLicense](https://img.shields.io/npm/l/lipstick-ecs.svg)](https://www.npmjs.com/package/lipstick-ecs)
 [![Coverage Status](https://coveralls.io/repos/github/superztf/lipstick-ECS/badge.svg?branch=master)](https://coveralls.io/github/superztf/lipstick-ECS?branch=master)
 
-lipstick-ECS
+# lipstick-ECS
 
-Editing, please wait O(∩_∩)O~
+## [Get example code](https://github.com/superztf/ECS-example)
+This example show how to use lipstick-ECS framework.
+![gif](https://raw.githubusercontent.com/superztf/ECS-example/master/example.gif)
+
+* API description is editing, please wait O(∩_∩)O~
