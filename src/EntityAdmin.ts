@@ -6,7 +6,7 @@ export type Entity = number;
 
 export class EntityAdmin {
     private next_entity: Entity = 0;
-    private entities: { [index: number]: { [index: string]: Component } } = { 0: {} };
+    private entities: Map<Entity, { [index: string]: Component }> = new Map();
     private components: { [index: string]: Set<Entity> } = {};
     private systems: System[] = [];
     private deferments: Array<{ func: Function, args: any[] }> = [];
@@ -60,40 +60,39 @@ export class EntityAdmin {
 
     public CreateEntity(...args: Component[]): Entity {
         const new_ent = ++this.next_entity;
-        this.entities[new_ent] = {};
+        this.entities.set(new_ent, {});
         this.AssignComponents(new_ent, ...args);
         return new_ent;
     }
 
     public DeleteEntity(e: Entity): void {
-        if (this.ValidEntity(e)) {
-            for (const cname in this.entities[e]) {
+        const coms = this.entities.get(e);
+        if (coms) {
+            for (const cname in coms) {
                 if (this.components[cname]) {
                     this.components[cname].delete(e);
                 }
             }
-            delete this.entities[e];
+            this.entities.delete(e);
         }
     }
 
     public GetComponentByEntity<T extends Component>(entity: Entity, cclass: CLASS<T>): T | undefined {
-        const coms = this.entities[entity];
+        const coms = this.entities.get(entity);
         if (coms) {
             return coms[cclass.name] as T;
         }
     }
 
     public ValidEntity(e: Entity): boolean {
-        if (this.entities[e]) {
-            return true;
-        }
-        return false;
+        return this.entities.has(e);
     }
 
     public AssignComponents(e: Entity, ...cs: Component[]): void {
-        if (this.entities[e]) {
+        const coms = this.entities.get(e);
+        if (coms) {
             for (const c of cs) {
-                this.entities[e][c.constructor.name] = c;
+                coms[c.constructor.name] = c;
                 if (!this.components[c.constructor.name]) {
                     this.components[c.constructor.name] = new Set();
                 }
@@ -104,9 +103,10 @@ export class EntityAdmin {
     }
 
     public RemoveComponents<T extends Component>(e: Entity, ...cclass: Array<CLASS<T>>) {
-        if (this.entities[e]) {
+        const coms = this.entities.get(e);
+        if (coms) {
             for (const c of cclass) {
-                delete this.entities[e][c.name];
+                delete coms[c.name];
             }
         }
         for (const c of cclass) {
@@ -117,7 +117,8 @@ export class EntityAdmin {
     }
 
     public HasComponet(e: Entity, c: CLASS<Component>): boolean {
-        if (this.entities[e] && this.entities[e][c.name]) {
+        const coms = this.entities.get(e);
+        if (coms && coms[c.name]) {
             return true;
         }
         return false;
@@ -126,8 +127,9 @@ export class EntityAdmin {
     public *GetComponents<T extends Component>(cclass: CLASS<T>): IterableIterator<T> {
         if (this.components[cclass.name]) {
             for (const e of this.components[cclass.name].values()) {
-                if (this.ValidEntity(e) && this.entities[e][cclass.name]) {
-                    yield this.entities[e][cclass.name] as T;
+                const coms = this.entities.get(e);
+                if (coms && coms[cclass.name]) {
+                    yield coms[cclass.name] as T;
                 }
             }
         }
