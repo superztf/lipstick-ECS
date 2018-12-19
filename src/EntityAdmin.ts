@@ -14,8 +14,8 @@ export class EntityAdmin {
     private lastupdate: number = present();
     private running = false;
 
-    public start(): void {
-        this.lastupdate = present();
+    public start(curtime?: number): void {
+        this.lastupdate = curtime === undefined ? present() : curtime;
         this.running = true;
     }
 

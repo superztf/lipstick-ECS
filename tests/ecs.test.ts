@@ -177,7 +177,7 @@ describe("ecs test", () => {
     it("system update", () => {
         admin.stop();
         admin.AddSystem(SystemB);
-        admin.start();
+        admin.start(Date.now());
 
         const e1 = admin.CreateEntity(new ComponentA(), new ComponentB(), new ComponentC(100, ""));
 
