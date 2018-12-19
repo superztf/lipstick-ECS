@@ -142,6 +142,8 @@ describe("ecs test", () => {
         } else {
             throw (new Error("public components err: expect ComponentC"));
         }
+        const c2 = admin.SurePubComponent(ComponentC);
+        expect(c.attr1).toBe(n);
     });
     it("push deferment", () => {
         let value = 0;

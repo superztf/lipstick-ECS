@@ -31,6 +31,10 @@ export class EntityAdmin {
         return this.pubcoms[cclass.name] as T;
     }
 
+    public SurePubComponent<T extends Component>(cclass: CLASS<T>): T {
+        return this.pubcoms[cclass.name] as T;
+    }
+
     public PushDeferment(func: Function, ...args: any) {
         this.deferments.push({ func, args });
     }
