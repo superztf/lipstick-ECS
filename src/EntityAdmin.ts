@@ -14,32 +14,75 @@ export class EntityAdmin {
     private lastupdate: number = present();
     private running = false;
 
-    public start(curtime?: number): void {
-        this.lastupdate = curtime === undefined ? present() : curtime;
+    /**
+     * The default running state is false. This method set it true. @see UpdateSystems can work only in true state.
+     *
+     * @see UpdateSystems
+     * @param {number} [curtime=present()] A currrent time. If not given curtime, will use @see present
+     * @memberof EntityAdmin
+     */
+    public start(curtime: number = present()): void {
+        this.lastupdate = curtime;
         this.running = true;
     }
 
+    /**
+     * Set running state false. @see UpdateSystems won't work.
+     * @memberof EntityAdmin
+     */
     public stop(): void {
         this.running = false;
     }
 
+    /**
+     * Public component is Singleton pattern. It used for share data between @see System , but not for entity.
+     * Set a public component.
+     * @param c A Component object
+     */
     public SetPubComponent(c: Component) {
         this.pubcoms[c.constructor.name] = c;
     }
 
+    /**
+     * Get a public component.
+     * @see SetPubComponent
+     * @template T
+     * @param {CLASS<T>} cclass A component class name.
+     * @returns {(undefined | T)}
+     * @memberof EntityAdmin
+     */
     public GetPubComponent<T extends Component>(cclass: CLASS<T>): undefined | T {
         return this.pubcoms[cclass.name] as T;
     }
 
+    /**
+     * Actually the same as @see GetPubComponent ,but returns by a type assertion.
+     * If you are sure this type of component exist, call this method maybe better than @see GetPubComponent
+     * @template T
+     * @param {CLASS<T>} cclass A component class name.
+     * @returns {T}
+     * @memberof EntityAdmin
+     */
     public SurePubComponent<T extends Component>(cclass: CLASS<T>): T {
         return this.pubcoms[cclass.name] as T;
     }
 
+    /**
+     * Push a deferment item. The deferment will be deal at the end of one frame.(A @see UpdateSystems call is a frame)
+     * @param {Function} func A function to deal delayed things.
+     * @param {...any} args parameter list for func
+     * @memberof EntityAdmin
+     */
     public PushDeferment(func: Function, ...args: any) {
         this.deferments.push({ func, args });
     }
 
-    // bigger number means higher priority
+    /**
+     * Add a @see System , generally be called before @see start
+     * @param {CLASS<System>} sclass a system class name
+     * @param {number} [priority=0] Bigger number means higher priority. Priority determines the order of updating systems.
+     * @memberof EntityAdmin
+     */
     public AddSystem(sclass: CLASS<System>, priority: number = 0) {
         this.systems.push(new sclass(this, priority));
         this.systems.sort((a: System, b: System) => {
@@ -47,11 +90,15 @@ export class EntityAdmin {
         });
     }
 
-    public UpdateSystems(nowtime?: number) {
+    /**
+     * Update all @see System ,and then deal deferment things. If the running state is false, it will do nothing.
+     * @param {number} [curtime] A currrent time. If not given curtime, will use @see present
+     * @memberof EntityAdmin
+     */
+    public UpdateSystems(curtime: number = present()) {
         if (this.running) {
-            const now = nowtime ? nowtime : present();
-            const delta = now - this.lastupdate;
-            this.lastupdate = now;
+            const delta = curtime - this.lastupdate;
+            this.lastupdate = curtime;
             for (const s of this.systems) {
                 s.Update(delta);
             }
@@ -62,6 +109,12 @@ export class EntityAdmin {
         }
     }
 
+    /**
+     * Create an entity. And optional for assigning a list of components at the same time.
+     * @param {...Component[]} args Component object list
+     * @returns {Entity} Identification for entity. It's a number actually.
+     * @memberof EntityAdmin
+     */
     public CreateEntity(...args: Component[]): Entity {
         const new_ent = ++this.next_entity;
         this.entities.set(new_ent, {});
@@ -69,6 +122,11 @@ export class EntityAdmin {
         return new_ent;
     }
 
+    /**
+     * Delete an Entity. And components the entity owns will be removed at the same time.
+     * @param {Entity} e The entity identification.
+     * @memberof EntityAdmin
+     */
     public DeleteEntity(e: Entity): void {
         const coms = this.entities.get(e);
         if (coms) {
@@ -81,6 +139,15 @@ export class EntityAdmin {
         }
     }
 
+    /**
+     *
+     *
+     * @template T
+     * @param {Entity} entity
+     * @param {CLASS<T>} cclass
+     * @returns {(T | undefined)}
+     * @memberof EntityAdmin
+     */
     public GetComponentByEntity<T extends Component>(entity: Entity, cclass: CLASS<T>): T | undefined {
         const coms = this.entities.get(entity);
         if (coms) {
