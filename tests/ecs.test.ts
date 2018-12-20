@@ -118,6 +118,11 @@ describe("ecs test", () => {
         } else {
             throw (new Error("assgin component err: expect ComponentC"));
         }
+        const newc = new ComponentA();
+        admin.CreateEntity(newc);
+        expect(() => {
+            admin.AssignComponents(e, newc);
+        }).toThrowError(/^ECS-ERROR:/);
     });
     it("add system", () => {
         admin.AddSystem(SystemA, 3);

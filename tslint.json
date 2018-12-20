@@ -9,7 +9,7 @@
         "no-empty": false,
         "max-line-length": [
             true,
-            180
+            220
         ],
         "ordered-imports": false,
         "max-classes-per-file": false,

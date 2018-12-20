@@ -1,9 +1,17 @@
 import { Component } from "./component";
 import { System } from "./system";
-import { present, CLASS } from "./utils";
+import { present, CLASS, throwError } from "./utils";
 
 export type Entity = number;
 
+/**
+ * The manager of a World. It cantains systems, entities and the components.
+ * Components can be divided into two types: one is assigned to entities to describe the entities's attributes,
+ * and the other is common singleton components, which are used to share data between different systems.
+ *
+ * @export
+ * @class EntityAdmin
+ */
 export class EntityAdmin {
     private next_entity: Entity = 0;
     private entities: Map<Entity, { [index: string]: Component }> = new Map();
@@ -28,6 +36,7 @@ export class EntityAdmin {
 
     /**
      * Set running state false. @see UpdateSystems won't work.
+     *
      * @memberof EntityAdmin
      */
     public stop(): void {
@@ -37,6 +46,7 @@ export class EntityAdmin {
     /**
      * Public component is Singleton pattern. It used for share data between @see System , but not for entity.
      * Set a public component.
+     *
      * @param c A Component object
      */
     public SetPubComponent(c: Component) {
@@ -45,6 +55,7 @@ export class EntityAdmin {
 
     /**
      * Get a public component.
+     *
      * @see SetPubComponent
      * @template T
      * @param {CLASS<T>} cclass A component class name.
@@ -58,6 +69,8 @@ export class EntityAdmin {
     /**
      * Actually the same as @see GetPubComponent ,but returns by a type assertion.
      * If you are sure this type of component exist, call this method maybe better than @see GetPubComponent
+     * The return type does not union undefined.
+     *
      * @template T
      * @param {CLASS<T>} cclass A component class name.
      * @returns {T}
@@ -69,6 +82,7 @@ export class EntityAdmin {
 
     /**
      * Push a deferment item. The deferment will be deal at the end of one frame.(A @see UpdateSystems call is a frame)
+     *
      * @param {Function} func A function to deal delayed things.
      * @param {...any} args parameter list for func
      * @memberof EntityAdmin
@@ -79,6 +93,7 @@ export class EntityAdmin {
 
     /**
      * Add a @see System , generally be called before @see start
+     *
      * @param {CLASS<System>} sclass a system class name
      * @param {number} [priority=0] Bigger number means higher priority. Priority determines the order of updating systems.
      * @memberof EntityAdmin
@@ -92,6 +107,7 @@ export class EntityAdmin {
 
     /**
      * Update all @see System ,and then deal deferment things. If the running state is false, it will do nothing.
+     *
      * @param {number} [curtime] A currrent time. If not given curtime, will use @see present
      * @memberof EntityAdmin
      */
@@ -110,8 +126,9 @@ export class EntityAdmin {
     }
 
     /**
-     * Create an entity. And optional for assigning a list of components at the same time.
-     * @param {...Component[]} args Component object list
+     * Create an entity. And optional for assigning a list of components at the same time.(@see AssignComponents )
+     *
+     * @param {...Component[]} args Component object list.
      * @returns {Entity} Identification for entity. It's a number actually.
      * @memberof EntityAdmin
      */
@@ -124,6 +141,7 @@ export class EntityAdmin {
 
     /**
      * Delete an Entity. And components the entity owns will be removed at the same time.
+     *
      * @param {Entity} e The entity identification.
      * @memberof EntityAdmin
      */
@@ -140,12 +158,12 @@ export class EntityAdmin {
     }
 
     /**
-     *
+     * Get an entity's component object.
      *
      * @template T
-     * @param {Entity} entity
-     * @param {CLASS<T>} cclass
-     * @returns {(T | undefined)}
+     * @param {Entity} entity An entity's identification. It's a number actually.
+     * @param {CLASS<T>} cclass Component class name.
+     * @returns {(T | undefined)} The target type component object. If not exist the entity or the entity did not own this type component, return undefined.
      * @memberof EntityAdmin
      */
     public GetComponentByEntity<T extends Component>(entity: Entity, cclass: CLASS<T>): T | undefined {
@@ -155,14 +173,31 @@ export class EntityAdmin {
         }
     }
 
+    /**
+     * Identify an entity exist or not.
+     *
+     * @param {Entity} e The entity ID.
+     * @returns {boolean} Return true means the entity exist.
+     * @memberof EntityAdmin
+     */
     public ValidEntity(e: Entity): boolean {
         return this.entities.has(e);
     }
 
+    /**
+     * Assign component objects to an entity. If you assign the same type component object to a entity, the latter will replace the former.
+     *
+     * @param {Entity} e The entity ID.
+     * @param {...Component[]} cs Component object list.
+     * @memberof EntityAdmin
+     */
     public AssignComponents(e: Entity, ...cs: Component[]): void {
         const coms = this.entities.get(e);
         if (coms) {
             for (const c of cs) {
+                if (c.entity) {
+                    throwError(`${c.constructor.name} has been assign to ${c.entity}, cannot assign to ${e} repeatedly.`);
+                }
                 coms[c.constructor.name] = c;
                 if (!this.components[c.constructor.name]) {
                     this.components[c.constructor.name] = new Set();
@@ -173,6 +208,15 @@ export class EntityAdmin {
         }
     }
 
+    /**
+     * Remove component object from an entity.
+     * If the entity or components do not exist, this method just do nothing, won't throw error.
+     *
+     * @template T
+     * @param {Entity} e The entity ID.
+     * @param {...Array<CLASS<T>>} cclass A list of component class name.
+     * @memberof EntityAdmin
+     */
     public RemoveComponents<T extends Component>(e: Entity, ...cclass: Array<CLASS<T>>) {
         const coms = this.entities.get(e);
         if (coms) {
@@ -187,6 +231,14 @@ export class EntityAdmin {
         }
     }
 
+    /**
+     * Determine whether the entity owns the specified type component.
+     *
+     * @param {Entity} e The entity ID.
+     * @param {CLASS<Component>} c Component class name.
+     * @returns {boolean}
+     * @memberof EntityAdmin
+     */
     public HasComponet(e: Entity, c: CLASS<Component>): boolean {
         const coms = this.entities.get(e);
         if (coms && coms[c.name]) {
@@ -195,6 +247,14 @@ export class EntityAdmin {
         return false;
     }
 
+    /**
+     * Returns an iterable of components by an specified type.
+     *
+     * @template T
+     * @param {CLASS<T>} cclass Component class name.
+     * @returns {IterableIterator<T>}
+     * @memberof EntityAdmin
+     */
     public *GetComponents<T extends Component>(cclass: CLASS<T>): IterableIterator<T> {
         if (this.components[cclass.name]) {
             for (const e of this.components[cclass.name].values()) {
@@ -206,6 +266,22 @@ export class EntityAdmin {
         }
     }
 
+    /**
+     * Returns an iterable of components by the first type you give. In this case, you can use @see SureSibling to get other type components.
+     * Example:
+     * ```typescript
+     * for (const a of admin.GetComponentsByTuple(ComponentA,ComponentB,ComponentC)) {
+     *     // b and c must exist in a's owner entity. The a,b,c have the same owner entity.
+     *     const b=a.SureSibling(admin,ComponentB);
+     *     const c=a.SureSibling(admin,ComponentC);
+     * }
+     * ```
+     *
+     * @template T
+     * @param {...[CLASS<T>, ...Array<CLASS<Component>>]} cclass A list of component class name. Give one or more component types.
+     * @returns {IterableIterator<T>}
+     * @memberof EntityAdmin
+     */
     public *GetComponentsByTuple<T extends Component>(...cclass: [CLASS<T>, ...Array<CLASS<Component>>]): IterableIterator<T> {
         interface ICInfo { type: CLASS<Component>; len: number; }
         if (cclass.length <= 1) {
