@@ -269,10 +269,12 @@ export class EntityAdmin {
      * Returns an iterable of components by the first type you give. In this case, you can use EntityAdmin.SureSibling() to get other type components.
      * Example:
      * ```typescript
-     * for (const a of admin.GetComponentsByTuple(ComponentA,ComponentB,ComponentC)) {
+     * for (const a of admin.GetComponentsByTuple(ComponentA, ComponentB, ComponentC)) {
      *     // In this case, ComponentB and ComponentC must exist in a's owner entity. The a,b,c have the same owner entity.
-     *     const b=a.SureSibling(admin,ComponentB);
-     *     const c=a.SureSibling(admin,ComponentC);
+     *     const b: ComponentB = a.SureSibling(admin, ComponentB);
+     *     const c: ComponentC = a.SureSibling(admin, ComponentC);
+     *     // Can't confirm whether ComponentD exists.
+     *     const d: ComponentD | undefined = a.GetSibling(ComponentD);
      * }
      * ```
      *

@@ -382,17 +382,19 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in EntityAdmin.ts:284</li>
+									<li>Defined in EntityAdmin.ts:286</li>
 								</ul>
 							</aside>
 							<div class="tsd-comment tsd-typography">
 								<div class="lead">
 									<p>Returns an iterable of components by the first type you give. In this case, you can use EntityAdmin.SureSibling() to get other type components.
 									Example:</p>
-									<pre><code class="language-typescript"><span class="hljs-keyword">for</span> (<span class="hljs-keyword">const</span> a of admin.GetComponentsByTuple(ComponentA,ComponentB,ComponentC)) {
+									<pre><code class="language-typescript"><span class="hljs-keyword">for</span> (<span class="hljs-keyword">const</span> a of admin.GetComponentsByTuple(ComponentA, ComponentB, ComponentC)) {
     <span class="hljs-comment">// In this case, ComponentB and ComponentC must exist in a's owner entity. The a,b,c have the same owner entity.</span>
-    <span class="hljs-keyword">const</span> b=a.SureSibling(admin,ComponentB);
-    <span class="hljs-keyword">const</span> c=a.SureSibling(admin,ComponentC);
+    <span class="hljs-keyword">const</span> b: ComponentB = a.SureSibling(admin, ComponentB);
+    <span class="hljs-keyword">const</span> c: ComponentC = a.SureSibling(admin, ComponentC);
+    <span class="hljs-comment">// Can't confirm whether ComponentD exists.</span>
+    <span class="hljs-keyword">const</span> d: ComponentD | <span class="hljs-literal">undefined</span> = a.GetSibling(ComponentD);
 }</code></pre>
 								</div>
 								<dl class="tsd-comment-tags">
