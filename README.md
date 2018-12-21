@@ -13,7 +13,7 @@ $ npm install lipstick-ecs --save
 ```
 
 * [ECS Concept](https://en.wikipedia.org/wiki/Entity%E2%80%93component%E2%80%93system)
-* [Documentation](https://superztf.github.io/lipstick-ECS)
+* [Documentation](https://superztf.github.io/lipstick-ECS/globals.html)
 * [Example Code](https://github.com/superztf/ECS-example)
 
 ![gif](https://raw.githubusercontent.com/superztf/ECS-example/master/example.gif)

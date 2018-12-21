@@ -1,6 +1,6 @@
-node_modules
-tests
-src
+node_modules/
+tests/
+src/
 package-lock.json
 .travis.yml
 tslint.json
@@ -8,4 +8,7 @@ tslint.json
 tsconfig.json
 .gitignore
 jest.config.js
-coverage
+coverage/
+docs/
+.vscode/
+typedoc.json
