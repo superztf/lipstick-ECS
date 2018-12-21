@@ -128,12 +128,12 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in EntityAdmin.ts:99</li>
+									<li>Defined in EntityAdmin.ts:100</li>
 								</ul>
 							</aside>
 							<div class="tsd-comment tsd-typography">
 								<div class="lead">
-									<p>Add a System, generally be called before EntityAdmin.start()</p>
+									<p>Add a System, generally be called before EntityAdmin.start().</p>
 								</div>
 								<dl class="tsd-comment-tags">
 									<dt>memberof</dt>
@@ -167,7 +167,7 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in EntityAdmin.ts:193</li>
+									<li>Defined in EntityAdmin.ts:194</li>
 								</ul>
 							</aside>
 							<div class="tsd-comment tsd-typography">
@@ -209,7 +209,7 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in EntityAdmin.ts:134</li>
+									<li>Defined in EntityAdmin.ts:135</li>
 								</ul>
 							</aside>
 							<div class="tsd-comment tsd-typography">
@@ -246,7 +246,7 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in EntityAdmin.ts:147</li>
+									<li>Defined in EntityAdmin.ts:148</li>
 								</ul>
 							</aside>
 							<div class="tsd-comment tsd-typography">
@@ -282,7 +282,7 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in EntityAdmin.ts:168</li>
+									<li>Defined in EntityAdmin.ts:169</li>
 								</ul>
 							</aside>
 							<div class="tsd-comment tsd-typography">
@@ -337,7 +337,7 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in EntityAdmin.ts:257</li>
+									<li>Defined in EntityAdmin.ts:258</li>
 								</ul>
 							</aside>
 							<div class="tsd-comment tsd-typography">
@@ -382,7 +382,7 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in EntityAdmin.ts:286</li>
+									<li>Defined in EntityAdmin.ts:287</li>
 								</ul>
 							</aside>
 							<div class="tsd-comment tsd-typography">
@@ -484,7 +484,7 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in EntityAdmin.ts:241</li>
+									<li>Defined in EntityAdmin.ts:242</li>
 								</ul>
 							</aside>
 							<div class="tsd-comment tsd-typography">
@@ -526,12 +526,13 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in EntityAdmin.ts:88</li>
+									<li>Defined in EntityAdmin.ts:89</li>
 								</ul>
 							</aside>
 							<div class="tsd-comment tsd-typography">
 								<div class="lead">
-									<p>Push a deferment item. The deferment items will be deal at the end of each frame and then be cleared out.(A EntityAdmin.UpdateSystems() call is a frame).</p>
+									<p>Push a deferment item. The deferment items will be processed in queue order at the end of each frame and then be cleared out.
+									One EntityAdmin.UpdateSystems() call is one frame.</p>
 								</div>
 								<dl class="tsd-comment-tags">
 									<dt>memberof</dt>
@@ -568,7 +569,7 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in EntityAdmin.ts:219</li>
+									<li>Defined in EntityAdmin.ts:220</li>
 								</ul>
 							</aside>
 							<div class="tsd-comment tsd-typography">
@@ -699,12 +700,12 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in EntityAdmin.ts:113</li>
+									<li>Defined in EntityAdmin.ts:114</li>
 								</ul>
 							</aside>
 							<div class="tsd-comment tsd-typography">
 								<div class="lead">
-									<p>Update all Systems, and then deal deferment items you pushed before, at last clear deferment buffer.
+									<p>Call all systems Update() method in order of their priority, and then deal deferment items you pushed before, at last clear deferment buffer.
 									If the running state is false, it will do nothing.</p>
 								</div>
 								<dl class="tsd-comment-tags">
@@ -733,7 +734,7 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in EntityAdmin.ts:182</li>
+									<li>Defined in EntityAdmin.ts:183</li>
 								</ul>
 							</aside>
 							<div class="tsd-comment tsd-typography">

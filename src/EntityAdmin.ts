@@ -79,7 +79,8 @@ export class EntityAdmin {
     }
 
     /**
-     * Push a deferment item. The deferment items will be deal at the end of each frame and then be cleared out.(A EntityAdmin.UpdateSystems() call is a frame).
+     * Push a deferment item. The deferment items will be processed in queue order at the end of each frame and then be cleared out.
+     * One EntityAdmin.UpdateSystems() call is one frame.
      *
      * @param {Function} func A function to deal delayed things.
      * @param {...any} args parameter list for func
@@ -90,7 +91,7 @@ export class EntityAdmin {
     }
 
     /**
-     * Add a System, generally be called before EntityAdmin.start()
+     * Add a System, generally be called before EntityAdmin.start().
      *
      * @param {CLASS<System>} sclass a system class name
      * @param {number} [priority=0] Bigger number means higher priority. Priority determines the order of updating systems.
@@ -104,7 +105,7 @@ export class EntityAdmin {
     }
 
     /**
-     * Update all Systems, and then deal deferment items you pushed before, at last clear deferment buffer.
+     * Call all systems Update() method in order of their priority, and then deal deferment items you pushed before, at last clear deferment buffer.
      * If the running state is false, it will do nothing.
      *
      * @param {number} [curtime] A currrent time. If not given curtime, will use present().
