@@ -6,8 +6,7 @@ export type Entity = number;
 
 /**
  * The manager of a World. It cantains systems, entities and the components.
- * Components can be divided into two types: one is assigned to entities to describe the entities's attributes,
- * and the other is common singleton components, which are used to share data between different systems.
+ * Components can be divided into two types: one is assigned to entities to describe the entities's attributes, and the other is common singleton components, which are used to share data between different systems.
  *
  * @export
  * @class EntityAdmin
@@ -23,10 +22,9 @@ export class EntityAdmin {
     private running = false;
 
     /**
-     * The default running state is false. This method set it true. @see UpdateSystems can work only in true state.
+     * The default running state is false. This method set it true. EntityAdmin.UpdateSystems() can work only in running===true state.
      *
-     * @see UpdateSystems
-     * @param {number} [curtime=present()] A currrent time. If not given curtime, will use @see present
+     * @param {number} [curtime=present()] A currrent time. If not given curtime, will use present().
      * @memberof EntityAdmin
      */
     public start(curtime: number = present()): void {
@@ -35,7 +33,7 @@ export class EntityAdmin {
     }
 
     /**
-     * Set running state false. @see UpdateSystems won't work.
+     * Set running state false. In this state, EntityAdmin.UpdateSystems() do nothing.
      *
      * @memberof EntityAdmin
      */
@@ -44,8 +42,8 @@ export class EntityAdmin {
     }
 
     /**
-     * Public component is Singleton pattern. It used for share data between @see System , but not for entity.
      * Set a public component.
+     * Public component is Singleton pattern. It used for share data between Systems , but not for assigning to entity.
      *
      * @param c A Component object
      */
@@ -55,8 +53,8 @@ export class EntityAdmin {
 
     /**
      * Get a public component.
+     * See EntityAdmin.SetPubComponent().
      *
-     * @see SetPubComponent
      * @template T
      * @param {CLASS<T>} cclass A component class name.
      * @returns {(undefined | T)}
@@ -67,8 +65,8 @@ export class EntityAdmin {
     }
 
     /**
-     * Actually the same as @see GetPubComponent ,but returns by a type assertion.
-     * If you are sure this type of component exist, call this method maybe better than @see GetPubComponent
+     * Actually the same as EntityAdmin.GetPubComponent(), but returns by a type assertion.
+     * If you are sure this type of component exist, call this method maybe better than EntityAdmin.GetPubComponent().
      * The return type does not union undefined.
      *
      * @template T
@@ -81,7 +79,7 @@ export class EntityAdmin {
     }
 
     /**
-     * Push a deferment item. The deferment will be deal at the end of one frame.(A @see UpdateSystems call is a frame)
+     * Push a deferment item. The deferment items will be deal at the end of each frame and then be cleared out.(A EntityAdmin.UpdateSystems() call is a frame).
      *
      * @param {Function} func A function to deal delayed things.
      * @param {...any} args parameter list for func
@@ -92,7 +90,7 @@ export class EntityAdmin {
     }
 
     /**
-     * Add a @see System , generally be called before @see start
+     * Add a System, generally be called before EntityAdmin.start()
      *
      * @param {CLASS<System>} sclass a system class name
      * @param {number} [priority=0] Bigger number means higher priority. Priority determines the order of updating systems.
@@ -106,9 +104,10 @@ export class EntityAdmin {
     }
 
     /**
-     * Update all @see System ,and then deal deferment things. If the running state is false, it will do nothing.
+     * Update all Systems, and then deal deferment items you pushed before, at last clear deferment buffer.
+     * If the running state is false, it will do nothing.
      *
-     * @param {number} [curtime] A currrent time. If not given curtime, will use @see present
+     * @param {number} [curtime] A currrent time. If not given curtime, will use present().
      * @memberof EntityAdmin
      */
     public UpdateSystems(curtime: number = present()) {
@@ -126,7 +125,7 @@ export class EntityAdmin {
     }
 
     /**
-     * Create an entity. And optional for assigning a list of components at the same time.(@see AssignComponents )
+     * Create an entity. And optional for assigning a list of components at the same time.
      *
      * @param {...Component[]} args Component object list.
      * @returns {Entity} Identification for entity. It's a number actually.
@@ -267,11 +266,11 @@ export class EntityAdmin {
     }
 
     /**
-     * Returns an iterable of components by the first type you give. In this case, you can use @see SureSibling to get other type components.
+     * Returns an iterable of components by the first type you give. In this case, you can use EntityAdmin.SureSibling() to get other type components.
      * Example:
      * ```typescript
      * for (const a of admin.GetComponentsByTuple(ComponentA,ComponentB,ComponentC)) {
-     *     // b and c must exist in a's owner entity. The a,b,c have the same owner entity.
+     *     // In this case, ComponentB and ComponentC must exist in a's owner entity. The a,b,c have the same owner entity.
      *     const b=a.SureSibling(admin,ComponentB);
      *     const c=a.SureSibling(admin,ComponentC);
      * }

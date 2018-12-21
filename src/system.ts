@@ -1,8 +1,8 @@
 import { EntityAdmin } from "./EntityAdmin";
 
 /**
- * Base class for all Systems to inherit from. And you should implement the abstract method @see Update .
- * Each @see System do not know what entity is and do not care about entity, they just do something in @see Component sets.
+ * Base class for all Systems to inherit from. And you should implement the abstract method System.Update().
+ * Each System do not know what entity is and do not care about entity, they just do something with Component sets.
  *
  * @export
  * @abstract
@@ -14,8 +14,8 @@ export abstract class System {
 
     /**
      * It's unnecessary to create an System object directly.
+     * EntityAdmin.AddSystem() will create an instance of System.
      *
-     * @see AddSystem will create an instance of System.
      * @param {EntityAdmin} a
      * @param {number} p
      * @memberof System
@@ -26,7 +26,7 @@ export abstract class System {
     }
 
     /**
-     * Get the system's priority. Bigger number means higher priority
+     * Get the system's priority. Bigger number means higher priority.
      *
      * @readonly
      * @type {number}
@@ -37,10 +37,10 @@ export abstract class System {
     }
 
     /**
-     * @see UpdateSystems will call this method in each frame.
+     * EntityAdmin.UpdateSystems() will call this method in each frame.
      *
      * @abstract
-     * @param {number} timeDelta the milliseconds used by last frame.
+     * @param {number} timeDelta the milliseconds costed by last frame.
      * @memberof System
      */
     public abstract Update(timeDelta: number): void;

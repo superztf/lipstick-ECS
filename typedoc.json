@@ -1,0 +1,10 @@
+{
+	"out": "./docs",
+	"readme": "./README.md",
+	"includes": "/src",
+	"name": "lipstick-ECS",
+	"hideGenerator": true,
+	"mode": "file",
+	"excludeNotExported": true,
+	"excludePrivate": true
+}
