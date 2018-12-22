@@ -109,9 +109,9 @@ describe("ecs test", () => {
     it("assgin component", () => {
         const key = 2333;
         const e = admin.CreateEntity();
-        expect(admin.HasComponet(e, ComponentC)).toBeFalsy();
+        expect(admin.HasComponent(e, ComponentC)).toBeFalsy();
         admin.AssignComponents(e, new ComponentC(key, "world"));
-        expect(admin.HasComponet(e, ComponentC)).toBeTruthy();
+        expect(admin.HasComponent(e, ComponentC)).toBeTruthy();
         const c = admin.GetComponentByEntity(e, ComponentC);
         if (c) {
             expect(c.attr1).toBe(key);

@@ -239,7 +239,7 @@ export class EntityAdmin {
      * @returns {boolean}
      * @memberof EntityAdmin
      */
-    public HasComponet(e: Entity, c: CLASS<Component>): boolean {
+    public HasComponent(e: Entity, c: CLASS<Component>): boolean {
         const coms = this.entities.get(e);
         if (coms && coms[c.name]) {
             return true;
