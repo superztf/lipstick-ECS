@@ -1,6 +1,6 @@
 import { Component } from "./component";
 import { System } from "./system";
-import { present, CLASS, throwError } from "./utils";
+import { present, CLASS, throwError, IFilter, FilterID } from "./utils";
 
 export type Entity = number;
 
@@ -20,6 +20,8 @@ export class EntityAdmin {
     private pubcoms: { [index: string]: Component } = {};
     private lastupdate: number = present();
     private running = false;
+    private iswatch = false;
+    private watchcompts: Map<string, Set<FilterID>> = new Map();
 
     /**
      * The default running state is false. This method set it true. EntityAdmin.UpdateSystems() can work only in running===true state.
@@ -233,6 +235,7 @@ export class EntityAdmin {
 
     /**
      * Determine whether the entity owns the specified type component.
+     * If this entity does not exist, returns false.
      *
      * @param {Entity} e The entity ID.
      * @param {CLASS<Component>} c Component class name.
@@ -313,5 +316,14 @@ export class EntityAdmin {
                 yield this.GetComponentByEntity(c1.entity, T_type) as T;
             }
         }
+    }
+
+    public AddWatching<T extends Component>(f: IFilter<T>) {
+        if (!this.iswatch) { this.iswatch = true; }
+
+    }
+
+    public *GetComponentsByFilter<T extends Component>(f: IFilter<T>): IterableIterator<T> {
+
     }
 }

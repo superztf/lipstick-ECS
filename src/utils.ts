@@ -1,4 +1,17 @@
+import { Component } from "./component";
+
 export type CLASS<T> = new (...args: any) => T;
+export type FilterID = string;
+
+export interface IFilter<T> {
+    all_of: [CLASS<T>, ...Array<CLASS<T>>];
+    any_of?: Array<CLASS<T>>;
+    none_of?: Array<CLASS<T>>;
+}
+
+export function makefilterid() {
+
+}
 
 /**
  * This function returns a millisecond time.
