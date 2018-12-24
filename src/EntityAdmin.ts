@@ -2,7 +2,7 @@ import { Component } from "./component";
 import { System } from "./system";
 import { present, CLASS, IFilter } from "./utils";
 import { throwError } from "./_utils";
-import { FilterID, makefilterid, Filter } from "./filter";
+import { FilterComponents, FilterMatch } from "./_filter";
 
 export declare type Entity = number;
 
@@ -206,7 +206,7 @@ export class EntityAdmin {
                     throwError(`${c.constructor.name} has been assign to ${c.entity}, cannot assign to ${e} repeatedly.`);
                 }
                 const cls = c.constructor as CLASS<Component>;
-                coms[cls.name] = c;
+
                 let set = this.components.get(cls);
                 if (!set) {
                     set = new Set();
@@ -214,9 +214,10 @@ export class EntityAdmin {
                 }
                 set.add(e);
                 (c as any).m_entity = e;
-                if (this.watch_open) {
-
+                if (this.watch_open && !coms[cls.name]) {
+                    this.WatchComponent(e, cls);
                 }
+                coms[cls.name] = c;
             }
         }
     }
@@ -240,7 +241,10 @@ export class EntityAdmin {
         for (const c of cclass) {
             const set = this.components.get(c);
             if (set) {
-                set.delete(e);
+                const ret = set.delete(e);
+                if (this.watch_open && ret) {
+                    this.WatchComponent(e, c);
+                }
             }
         }
     }
@@ -337,14 +341,16 @@ export class EntityAdmin {
             throwError("AddWatching should be used before CreateEntity");
         }
         if (!this.watch_open) { this.watch_open = true; }
-        const fobj = new Filter(f);
-        for (const c of fobj.Components()) {
+        for (const c of FilterComponents(f)) {
             let filter_set = this.watch_compts.get(c);
             if (!filter_set) {
                 filter_set = new Set();
                 this.watch_compts.set(c, filter_set);
             }
             filter_set.add(f);
+        }
+        if (!this.watch_ents.has(f)) {
+            this.watch_ents.set(f, new Set());
         }
     }
 
@@ -357,6 +363,19 @@ export class EntityAdmin {
         if (set) {
             for (const ent of set.values()) {
                 yield ent;
+            }
+        }
+    }
+
+    private WatchComponent(e: Entity, cls: CLASS<Component>) {
+        const filter_set = this.watch_compts.get(cls);
+        if (filter_set) {
+            for (const fobj of filter_set.values()) {
+                if (FilterMatch(this, fobj, e)) {
+                    (this.watch_ents.get(fobj) as Set<Entity>).add(e);
+                } else {
+                    (this.watch_ents.get(fobj) as Set<Entity>).delete(e);
+                }
             }
         }
     }
