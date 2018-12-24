@@ -2,6 +2,7 @@
 	"out": "./docs",
 	"readme": "./README.md",
 	"includes": "/src",
+	"excludes": "^_",
 	"name": "lipstick-ECS",
 	"hideGenerator": true,
 	"mode": "file",

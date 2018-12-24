@@ -1,16 +1,11 @@
 import { Component } from "./component";
 
 export type CLASS<T> = new (...args: any) => T;
-export type FilterID = string;
 
-export interface IFilter<T> {
-    all_of: [CLASS<T>, ...Array<CLASS<T>>];
-    any_of?: Array<CLASS<T>>;
-    none_of?: Array<CLASS<T>>;
-}
-
-export function makefilterid() {
-
+export interface IFilter {
+    all_of?: Array<CLASS<Component>>;
+    any_of?: Array<CLASS<Component>>;
+    none_of?: Array<CLASS<Component>>;
 }
 
 /**
@@ -28,8 +23,4 @@ export function present() {
         const time = process.hrtime();
         return time[0] * 1e3 + time[1] / 1e6;
     }
-}
-
-export function throwError(errmsg: string) {
-    throw (new Error(`ECS-ERROR: ${errmsg}`));
 }

@@ -1,8 +1,10 @@
 import { Component } from "./component";
 import { System } from "./system";
-import { present, CLASS, throwError, IFilter, FilterID } from "./utils";
+import { present, CLASS, IFilter } from "./utils";
+import { throwError } from "./_utils";
+import { FilterID, makefilterid, Filter } from "./filter";
 
-export type Entity = number;
+export declare type Entity = number;
 
 /**
  * The manager of a World. It cantains systems, entities and the components.
@@ -14,14 +16,15 @@ export type Entity = number;
 export class EntityAdmin {
     private next_entity: Entity = 0;
     private entities: Map<Entity, { [index: string]: Component }> = new Map();
-    private components: { [index: string]: Set<Entity> } = {};
+    private components: Map<CLASS<Component>, Set<Entity>> = new Map();
     private systems: System[] = [];
     private deferments: Array<{ func: Function, args: any[] }> = [];
-    private pubcoms: { [index: string]: Component } = {};
+    private pubcoms: Map<CLASS<Component>, Component> = new Map();
     private lastupdate: number = present();
     private running = false;
-    private iswatch = false;
-    private watchcompts: Map<string, Set<FilterID>> = new Map();
+    private watch_open = false;
+    private watch_compts: Map<CLASS<Component>, Set<IFilter>> = new Map();
+    private watch_ents: Map<IFilter, Set<Entity>> = new Map();
 
     /**
      * The default running state is false. This method set it true. EntityAdmin.UpdateSystems() can work only in running===true state.
@@ -50,7 +53,7 @@ export class EntityAdmin {
      * @param c A Component object
      */
     public SetPubComponent(c: Component) {
-        this.pubcoms[c.constructor.name] = c;
+        this.pubcoms.set(c.constructor as CLASS<Component>, c);
     }
 
     /**
@@ -63,7 +66,7 @@ export class EntityAdmin {
      * @memberof EntityAdmin
      */
     public GetPubComponent<T extends Component>(cclass: CLASS<T>): undefined | T {
-        return this.pubcoms[cclass.name] as T;
+        return this.pubcoms.get(cclass) as undefined | T;
     }
 
     /**
@@ -77,7 +80,7 @@ export class EntityAdmin {
      * @memberof EntityAdmin
      */
     public SurePubComponent<T extends Component>(cclass: CLASS<T>): T {
-        return this.pubcoms[cclass.name] as T;
+        return this.pubcoms.get(cclass) as T;
     }
 
     /**
@@ -150,9 +153,11 @@ export class EntityAdmin {
     public DeleteEntity(e: Entity): void {
         const coms = this.entities.get(e);
         if (coms) {
+            // tslint:disable-next-line:forin
             for (const cname in coms) {
-                if (this.components[cname]) {
-                    this.components[cname].delete(e);
+                const set = this.components.get(coms[cname].constructor as CLASS<Component>);
+                if (set) {
+                    set.delete(e);
                 }
             }
             this.entities.delete(e);
@@ -200,12 +205,18 @@ export class EntityAdmin {
                 if (c.entity) {
                     throwError(`${c.constructor.name} has been assign to ${c.entity}, cannot assign to ${e} repeatedly.`);
                 }
-                coms[c.constructor.name] = c;
-                if (!this.components[c.constructor.name]) {
-                    this.components[c.constructor.name] = new Set();
+                const cls = c.constructor as CLASS<Component>;
+                coms[cls.name] = c;
+                let set = this.components.get(cls);
+                if (!set) {
+                    set = new Set();
+                    this.components.set(cls, set);
                 }
-                this.components[c.constructor.name].add(e);
+                set.add(e);
                 (c as any).m_entity = e;
+                if (this.watch_open) {
+
+                }
             }
         }
     }
@@ -227,8 +238,9 @@ export class EntityAdmin {
             }
         }
         for (const c of cclass) {
-            if (this.components[c.name]) {
-                this.components[c.name].delete(e);
+            const set = this.components.get(c);
+            if (set) {
+                set.delete(e);
             }
         }
     }
@@ -259,8 +271,9 @@ export class EntityAdmin {
      * @memberof EntityAdmin
      */
     public *GetComponents<T extends Component>(cclass: CLASS<T>): IterableIterator<T> {
-        if (this.components[cclass.name]) {
-            for (const e of this.components[cclass.name].values()) {
+        const set = this.components.get(cclass);
+        if (set) {
+            for (const e of set.values()) {
                 const coms = this.entities.get(e);
                 if (coms && coms[cclass.name]) {
                     yield coms[cclass.name] as T;
@@ -295,10 +308,11 @@ export class EntityAdmin {
         const T_type = cclass[0];
         const length_info: ICInfo[] = [];
         for (const c of cclass) {
-            if (!this.components[c.name]) {
+            const set = this.components.get(c);
+            if (!set) {
                 return;
             }
-            length_info.push({ type: c, len: this.components[c.name].size });
+            length_info.push({ type: c, len: set.size });
         }
         length_info.sort((a, b) => {
             return a.len - b.len;
@@ -318,12 +332,32 @@ export class EntityAdmin {
         }
     }
 
-    public AddWatching<T extends Component>(f: IFilter<T>) {
-        if (!this.iswatch) { this.iswatch = true; }
-
+    public AddWatching(f: IFilter) {
+        if (this.entities.size > 0) {
+            throwError("AddWatching should be used before CreateEntity");
+        }
+        if (!this.watch_open) { this.watch_open = true; }
+        const fobj = new Filter(f);
+        for (const c of fobj.Components()) {
+            let filter_set = this.watch_compts.get(c);
+            if (!filter_set) {
+                filter_set = new Set();
+                this.watch_compts.set(c, filter_set);
+            }
+            filter_set.add(f);
+        }
     }
 
-    public *GetComponentsByFilter<T extends Component>(f: IFilter<T>): IterableIterator<T> {
+    public GetComponentsByIndex<T extends Component>(entity: Entity, cclass: CLASS<T>): T {
+        return this.GetComponentByEntity(entity, cclass) as T;
+    }
 
+    public *GetIndexsByFilter(f: IFilter): IterableIterator<Entity> {
+        const set = this.watch_ents.get(f);
+        if (set) {
+            for (const ent of set.values()) {
+                yield ent;
+            }
+        }
     }
 }
