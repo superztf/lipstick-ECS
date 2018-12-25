@@ -1,7 +1,8 @@
-import { IFilter } from "./utils";
+import { IFilter, CLASS } from "./utils";
 import { EntityAdmin, Entity } from "./EntityAdmin";
+import { Component } from "./component";
 
-export function* FilterComponents(filter: IFilter) {
+export function* FilterComponents(filter: IFilter): IterableIterator<CLASS<Component>> {
     if (filter.all_of) {
         for (const c of filter.all_of) {
             yield c;

@@ -1,4 +1,4 @@
-import { EntityAdmin, Entity } from "../src/EntityAdmin";
+import { EntityAdmin } from "../src/EntityAdmin";
 import { Component } from "../src/component";
 import { System } from "../src/system";
 

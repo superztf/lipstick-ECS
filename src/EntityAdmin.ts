@@ -23,7 +23,8 @@ export class EntityAdmin {
     private lastupdate: number = present();
     private running = false;
     private watch_open = false;
-    private watch_compts: Map<CLASS<Component>, Set<IFilter>> = new Map();
+    private watch_compts: Set<CLASS<Component>> = new Set();
+    private watch_filters: Map<IFilter, Set<CLASS<Component>>> = new Map();
     private watch_ents: Map<IFilter, Set<Entity>> = new Map();
 
     /**
@@ -164,6 +165,16 @@ export class EntityAdmin {
         }
     }
 
+    public ClearAllEntity() {
+        this.entities.clear();
+        this.components.clear();
+        if (this.watch_open) {
+            for (const set of this.watch_ents.values()) {
+                set.clear();
+            }
+        }
+    }
+
     /**
      * Get an entity's component object.
      *
@@ -201,6 +212,10 @@ export class EntityAdmin {
     public AssignComponents(e: Entity, ...cs: Component[]): void {
         const coms = this.entities.get(e);
         if (coms) {
+            let watch_list: Array<CLASS<Component>> | undefined;
+            if (this.watch_open) {
+                watch_list = [];
+            }
             for (const c of cs) {
                 if (c.entity) {
                     throwError(`${c.constructor.name} has been assign to ${c.entity}, cannot assign to ${e} repeatedly.`);
@@ -214,10 +229,13 @@ export class EntityAdmin {
                 }
                 set.add(e);
                 (c as any).m_entity = e;
-                if (this.watch_open && !coms[cls.name]) {
-                    this.WatchComponent(e, cls);
+                if (watch_list && !coms[cls.name]) {
+                    watch_list.push(cls);
                 }
                 coms[cls.name] = c;
+            }
+            if (watch_list && watch_list.length > 0) {
+                this.WatchComponent(e, watch_list);
             }
         }
     }
@@ -238,14 +256,21 @@ export class EntityAdmin {
                 delete coms[c.name];
             }
         }
+        let watch_list: Array<CLASS<Component>> | undefined;
+        if (this.watch_open) {
+            watch_list = [];
+        }
         for (const c of cclass) {
             const set = this.components.get(c);
             if (set) {
                 const ret = set.delete(e);
-                if (this.watch_open && ret) {
-                    this.WatchComponent(e, c);
+                if (watch_list && ret) {
+                    watch_list.push(c);
                 }
             }
+        }
+        if (watch_list && watch_list.length > 0) {
+            this.WatchComponent(e, watch_list);
         }
     }
 
@@ -336,21 +361,22 @@ export class EntityAdmin {
         }
     }
 
-    public AddWatching(f: IFilter) {
+    public AddWatchings(...fts: [IFilter, ...IFilter[]]) {
         if (this.entities.size > 0) {
             throwError("AddWatching should be used before CreateEntity");
         }
         if (!this.watch_open) { this.watch_open = true; }
-        for (const c of FilterComponents(f)) {
-            let filter_set = this.watch_compts.get(c);
-            if (!filter_set) {
-                filter_set = new Set();
-                this.watch_compts.set(c, filter_set);
+        for (const f of fts) {
+            if (!this.watch_filters.has(f)) {
+                this.watch_filters.set(f, new Set());
             }
-            filter_set.add(f);
-        }
-        if (!this.watch_ents.has(f)) {
-            this.watch_ents.set(f, new Set());
+            for (const c of FilterComponents(f)) {
+                this.watch_compts.add(c);
+                (this.watch_filters.get(f) as Set<CLASS<Component>>).add(c);
+            }
+            if (!this.watch_ents.has(f)) {
+                this.watch_ents.set(f, new Set());
+            }
         }
     }
 
@@ -367,15 +393,20 @@ export class EntityAdmin {
         }
     }
 
-    private WatchComponent(e: Entity, cls: CLASS<Component>) {
-        const filter_set = this.watch_compts.get(cls);
-        if (filter_set) {
-            for (const fobj of filter_set.values()) {
-                if (FilterMatch(this, fobj, e)) {
-                    (this.watch_ents.get(fobj) as Set<Entity>).add(e);
-                } else {
-                    (this.watch_ents.get(fobj) as Set<Entity>).delete(e);
-                }
+    public MatchCountByFilter(f: IFilter): number {
+        const set = this.watch_ents.get(f);
+        if (set) {
+            return set.size;
+        }
+        return 0;
+    }
+
+    private WatchComponent(e: Entity, cls: Array<CLASS<Component>>) {
+        for (const fobj of this.watch_ents.keys()) {
+            if (FilterMatch(this, fobj, e)) {
+                (this.watch_ents.get(fobj) as Set<Entity>).add(e);
+            } else {
+                (this.watch_ents.get(fobj) as Set<Entity>).delete(e);
             }
         }
     }

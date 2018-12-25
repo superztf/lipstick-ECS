@@ -3,9 +3,9 @@ import { Component } from "./component";
 export type CLASS<T> = new (...args: any) => T;
 
 export interface IFilter {
-    all_of?: Array<CLASS<Component>>;
-    any_of?: Array<CLASS<Component>>;
-    none_of?: Array<CLASS<Component>>;
+    all_of?: [CLASS<Component>, ...Array<CLASS<Component>>];
+    any_of?: [CLASS<Component>, ...Array<CLASS<Component>>];
+    none_of?: [CLASS<Component>, ...Array<CLASS<Component>>];
 }
 
 /**
