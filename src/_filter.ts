@@ -2,6 +2,12 @@ import { IFilter, CLASS } from "./utils";
 import { EntityAdmin, Entity } from "./EntityAdmin";
 import { Component } from "./component";
 
+export interface IFilterID {
+    all_id: number;
+    none_id: number;
+    any_id: number;
+}
+
 export function* FilterComponents(filter: IFilter): IterableIterator<CLASS<Component>> {
     if (filter.all_of) {
         for (const c of filter.all_of) {

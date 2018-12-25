@@ -2,7 +2,7 @@ import { Component } from "./component";
 import { System } from "./system";
 import { present, CLASS, IFilter } from "./utils";
 import { throwError } from "./_utils";
-import { FilterComponents, FilterMatch } from "./_filter";
+import { FilterComponents, FilterMatch, IFilterID } from "./_filter";
 
 export declare type Entity = number;
 
@@ -14,18 +14,21 @@ export declare type Entity = number;
  * @class EntityAdmin
  */
 export class EntityAdmin {
-    private next_entity: Entity = 0;
-    private entities: Map<Entity, { [index: string]: Component }> = new Map();
-    private components: Map<CLASS<Component>, Set<Entity>> = new Map();
-    private systems: System[] = [];
-    private deferments: Array<{ func: Function, args: any[] }> = [];
-    private pubcoms: Map<CLASS<Component>, Component> = new Map();
-    private lastupdate: number = present();
-    private running = false;
-    private watch_open = false;
-    private watch_compts: Set<CLASS<Component>> = new Set();
-    private watch_filters: Map<IFilter, Set<CLASS<Component>>> = new Map();
-    private watch_ents: Map<IFilter, Set<Entity>> = new Map();
+    protected next_entity: Entity = 0;
+    protected entities: Map<Entity, { [index: string]: Component }> = new Map();
+    protected components: Map<CLASS<Component>, Set<Entity>> = new Map();
+    protected systems: System[] = [];
+    protected deferments: Array<{ func: Function, args: any[] }> = [];
+    protected pubcoms: Map<CLASS<Component>, Component> = new Map();
+    protected lastupdate: number = present();
+    protected running: boolean = false;
+    protected watch_open: boolean = false;
+    protected watch_compts: Set<CLASS<Component>> = new Set();
+    protected watch_filters: Map<IFilter, Set<CLASS<Component>>> = new Map();
+    protected watch_ents: Map<IFilter, Set<Entity>> = new Map();
+    protected watch_cid: Map<CLASS<Component>, number> = new Map();
+    protected watch_fid: Map<IFilter, IFilterID> = new Map();
+    protected next_cid: number = 0;
 
     /**
      * The default running state is false. This method set it true. EntityAdmin.UpdateSystems() can work only in running===true state.
@@ -373,6 +376,33 @@ export class EntityAdmin {
             for (const c of FilterComponents(f)) {
                 this.watch_compts.add(c);
                 (this.watch_filters.get(f) as Set<CLASS<Component>>).add(c);
+                // generate component id
+                if (!this.watch_cid.has(c)) {
+                    this.watch_cid.set(c, this.next_cid);
+                    this.next_cid += 1;
+                }
+            }
+            // generate filter id
+            if (!this.watch_fid.has(f)) {
+                let all_id = 0;
+                let none_id = 0;
+                let any_id = 0;
+                if (f.all_of) {
+                    for (const c of f.all_of) {
+                        all_id |= 1 << this.getcid(c);
+                    }
+                }
+                if (f.any_of) {
+                    for (const c of f.any_of) {
+                        any_id |= 1 << this.getcid(c);
+                    }
+                }
+                if (f.none_of) {
+                    for (const c of f.none_of) {
+                        none_id |= 1 << this.getcid(c);
+                    }
+                }
+                this.watch_fid.set(f, { all_id, none_id, any_id });
             }
             if (!this.watch_ents.has(f)) {
                 this.watch_ents.set(f, new Set());
@@ -401,7 +431,12 @@ export class EntityAdmin {
         return 0;
     }
 
-    private WatchComponent(e: Entity, cls: Array<CLASS<Component>>) {
+    protected getcid(c: CLASS<Component>): number {
+        // should confirm c in watch_cid when call this method
+        return this.watch_cid.get(c) as number;
+    }
+
+    protected WatchComponent(e: Entity, cls: Array<CLASS<Component>>) {
         for (const fobj of this.watch_ents.keys()) {
             if (FilterMatch(this, fobj, e)) {
                 (this.watch_ents.get(fobj) as Set<Entity>).add(e);
