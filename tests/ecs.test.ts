@@ -253,5 +253,9 @@ describe("ecs test", () => {
         admin.GetComponentByEntity(-1, TEST);
         admin.DeleteEntity(-1);
         admin.RemoveComponents(-1);
+
+        const e1 = admin.CreateEntity();
+        class NewCompt1 extends Component { }
+        admin.RemoveComponents(e1, NewCompt1);
     });
 });

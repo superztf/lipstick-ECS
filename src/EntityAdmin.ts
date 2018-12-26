@@ -159,10 +159,9 @@ export class EntityAdmin {
         if (coms) {
             // tslint:disable-next-line:forin
             for (const cname in coms) {
-                const set = this.components.get(coms[cname].constructor as CLASS<Component>);
-                if (set) {
-                    set.delete(e);
-                }
+                const set = this.components.get(coms[cname].constructor as CLASS<Component>) as Set<number>;
+                set.delete(e);
+
             }
             this.entities.delete(e);
         }
@@ -280,16 +279,12 @@ export class EntityAdmin {
                         effect_cls = c;
                     }
                     ++effect_cnt;
-                    let cidmap: number = 0;
-                    const cache = this.entity_cidmap.get(e);
-                    if (cache) {
-                        cidmap = cache;
-                    }
+                    let cidmap = this.entity_cidmap.get(e) as number;
                     const pos = this.getcid(c);
                     if (cidmap & (1 << pos)) {
                         cidmap ^= 1 << pos;
+                        this.entity_cidmap.set(e, cidmap);
                     }
-                    this.entity_cidmap.set(e, cidmap);
                 }
             }
         }
