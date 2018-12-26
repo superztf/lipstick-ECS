@@ -25,36 +25,3 @@ export function* FilterComponents(filter: IFilter): IterableIterator<CLASS<Compo
         }
     }
 }
-
-export function FilterMatch(admin: EntityAdmin, fobj: IFilter, e: Entity): boolean {
-    if (fobj.none_of) {
-        for (const c of fobj.none_of) {
-            if (admin.GetComponentByEntity(e, c)) {
-                return false;
-            }
-        }
-    }
-
-    if (fobj.all_of) {
-        for (const c of fobj.all_of) {
-            if (!admin.GetComponentByEntity(e, c)) {
-                return false;
-            }
-        }
-    }
-
-    if (fobj.any_of) {
-        let find = false;
-        for (const c of fobj.any_of) {
-            if (admin.GetComponentByEntity(e, c)) {
-                find = true;
-                break;
-            }
-        }
-        if (!find) {
-            return false;
-        }
-    }
-
-    return true;
-}

@@ -2,7 +2,7 @@ import { Component } from "./component";
 import { System } from "./system";
 import { present, CLASS, IFilter } from "./utils";
 import { throwError } from "./_utils";
-import { FilterComponents, FilterMatch, IFilterID } from "./_filter";
+import { FilterComponents, IFilterID } from "./_filter";
 
 export declare type Entity = number;
 
@@ -23,12 +23,12 @@ export class EntityAdmin {
     protected lastupdate: number = present();
     protected running: boolean = false;
     protected watch_open: boolean = false;
-    protected watch_compts: Set<CLASS<Component>> = new Set();
-    protected watch_filters: Map<IFilter, Set<CLASS<Component>>> = new Map();
+    protected watch_compts: Map<CLASS<Component>, Set<IFilter>> = new Map();
     protected watch_ents: Map<IFilter, Set<Entity>> = new Map();
     protected watch_cid: Map<CLASS<Component>, number> = new Map();
     protected watch_fid: Map<IFilter, IFilterID> = new Map();
     protected next_cid: number = 0;
+    protected entity_cidmap: Map<Entity, number> = new Map();
 
     /**
      * The default running state is false. This method set it true. EntityAdmin.UpdateSystems() can work only in running===true state.
@@ -166,15 +166,15 @@ export class EntityAdmin {
             }
             this.entities.delete(e);
         }
+        this.entity_cidmap.delete(e);
+        for (const entset of this.watch_ents.values()) {
+            entset.delete(e);
+        }
     }
 
     public ClearAllEntity() {
-        this.entities.clear();
-        this.components.clear();
-        if (this.watch_open) {
-            for (const set of this.watch_ents.values()) {
-                set.clear();
-            }
+        for (const e of this.entities.keys()) {
+            this.DeleteEntity(e);
         }
     }
 
@@ -214,17 +214,14 @@ export class EntityAdmin {
      */
     public AssignComponents(e: Entity, ...cs: Component[]): void {
         const coms = this.entities.get(e);
+        let effect_cnt = 0;
+        let effect_cls: CLASS<Component> | undefined;
         if (coms) {
-            let watch_list: Array<CLASS<Component>> | undefined;
-            if (this.watch_open) {
-                watch_list = [];
-            }
             for (const c of cs) {
                 if (c.entity) {
                     throwError(`${c.constructor.name} has been assign to ${c.entity}, cannot assign to ${e} repeatedly.`);
                 }
                 const cls = c.constructor as CLASS<Component>;
-
                 let set = this.components.get(cls);
                 if (!set) {
                     set = new Set();
@@ -232,14 +229,26 @@ export class EntityAdmin {
                 }
                 set.add(e);
                 (c as any).m_entity = e;
-                if (watch_list && !coms[cls.name]) {
-                    watch_list.push(cls);
+                if (this.watch_open && this.watch_compts.has(cls) && !coms[cls.name]) {
+                    if (!effect_cnt) {
+                        effect_cls = c.constructor as CLASS<Component>;
+                    }
+                    ++effect_cnt;
+                    let cidmap: number = 0;
+                    const cache = this.entity_cidmap.get(e);
+                    if (cache) {
+                        cidmap = cache;
+                    }
+                    cidmap |= 1 << this.getcid(cls);
+                    this.entity_cidmap.set(e, cidmap);
                 }
                 coms[cls.name] = c;
             }
-            if (watch_list && watch_list.length > 0) {
-                this.WatchComponent(e, watch_list);
-            }
+        }
+        if (effect_cnt === 1) {
+            this.afterSingleComptChange(e, effect_cls as CLASS<Component>);
+        } else if (effect_cnt > 1) {
+            this.afterMultiComptChange(e);
         }
     }
 
@@ -252,28 +261,42 @@ export class EntityAdmin {
      * @param {...Array<CLASS<T>>} cclass A list of component class name.
      * @memberof EntityAdmin
      */
-    public RemoveComponents<T extends Component>(e: Entity, ...cclass: Array<CLASS<T>>) {
+    public RemoveComponents(e: Entity, ...cclass: Array<CLASS<Component>>) {
         const coms = this.entities.get(e);
         if (coms) {
             for (const c of cclass) {
                 delete coms[c.name];
             }
         }
-        let watch_list: Array<CLASS<Component>> | undefined;
-        if (this.watch_open) {
-            watch_list = [];
-        }
+
+        let effect_cnt = 0;
+        let effect_cls: CLASS<Component> | undefined;
         for (const c of cclass) {
             const set = this.components.get(c);
             if (set) {
                 const ret = set.delete(e);
-                if (watch_list && ret) {
-                    watch_list.push(c);
+                if (this.watch_open && ret && this.watch_compts.has(c)) {
+                    if (!effect_cnt) {
+                        effect_cls = c;
+                    }
+                    ++effect_cnt;
+                    let cidmap: number = 0;
+                    const cache = this.entity_cidmap.get(e);
+                    if (cache) {
+                        cidmap = cache;
+                    }
+                    const pos = this.getcid(c);
+                    if (cidmap & (1 << pos)) {
+                        cidmap ^= 1 << pos;
+                    }
+                    this.entity_cidmap.set(e, cidmap);
                 }
             }
         }
-        if (watch_list && watch_list.length > 0) {
-            this.WatchComponent(e, watch_list);
+        if (effect_cnt === 1) {
+            this.afterSingleComptChange(e, effect_cls as CLASS<Component>);
+        } else if (effect_cnt > 1) {
+            this.afterMultiComptChange(e);
         }
     }
 
@@ -370,16 +393,17 @@ export class EntityAdmin {
         }
         if (!this.watch_open) { this.watch_open = true; }
         for (const f of fts) {
-            if (!this.watch_filters.has(f)) {
-                this.watch_filters.set(f, new Set());
-            }
             for (const c of FilterComponents(f)) {
-                this.watch_compts.add(c);
-                (this.watch_filters.get(f) as Set<CLASS<Component>>).add(c);
+                let set = this.watch_compts.get(c);
+                if (!set) {
+                    set = new Set();
+                    this.watch_compts.set(c, set);
+                }
+                set.add(f);
                 // generate component id
                 if (!this.watch_cid.has(c)) {
                     this.watch_cid.set(c, this.next_cid);
-                    this.next_cid += 1;
+                    ++this.next_cid;
                 }
             }
             // generate filter id
@@ -410,7 +434,7 @@ export class EntityAdmin {
         }
     }
 
-    public GetComponentsByIndex<T extends Component>(entity: Entity, cclass: CLASS<T>): T {
+    public GetComponentByIndex<T extends Component>(entity: Entity, cclass: CLASS<T>): T {
         return this.GetComponentByEntity(entity, cclass) as T;
     }
 
@@ -431,17 +455,47 @@ export class EntityAdmin {
         return 0;
     }
 
+    public matchFilter(e: Entity, fobj: IFilter): boolean {
+        const entity_cid = this.entity_cidmap.get(e) as number;
+        const fid = this.watch_fid.get(fobj) as IFilterID;
+
+        if (fid.all_id !== (fid.all_id & entity_cid)) {
+            return false;
+        }
+        if (fid.any_id) {
+            if (!(fid.any_id & entity_cid)) {
+                return false;
+            }
+        }
+        if (fid.none_id & entity_cid) {
+            return false;
+        }
+        return true;
+    }
+
     protected getcid(c: CLASS<Component>): number {
         // should confirm c in watch_cid when call this method
         return this.watch_cid.get(c) as number;
     }
 
-    protected WatchComponent(e: Entity, cls: Array<CLASS<Component>>) {
-        for (const fobj of this.watch_ents.keys()) {
-            if (FilterMatch(this, fobj, e)) {
-                (this.watch_ents.get(fobj) as Set<Entity>).add(e);
+    protected afterMultiComptChange(e: Entity) {
+        for (const [fobj, set] of this.watch_ents.entries()) {
+            if (this.matchFilter(e, fobj)) {
+                set.add(e);
             } else {
-                (this.watch_ents.get(fobj) as Set<Entity>).delete(e);
+                set.delete(e);
+            }
+        }
+    }
+
+    protected afterSingleComptChange(e: Entity, cclass: CLASS<Component>) {
+        const fobjset = this.watch_compts.get(cclass) as Set<IFilter>;
+        for (const fobj of fobjset.values()) {
+            const set = this.watch_ents.get(fobj) as Set<number>;
+            if (this.matchFilter(e, fobj)) {
+                set.add(e);
+            } else {
+                set.delete(e);
             }
         }
     }
