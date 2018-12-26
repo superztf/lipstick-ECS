@@ -211,5 +211,8 @@ describe("test watch funtion", () => {
         }
         admin.ClearAllEntity();
         admin.AddWatchings(Match_1, Match_1);
+        expect(() => {
+            admin.AddWatchings({});
+        }).toThrowError(/^ECS-ERROR:/);
     });
 });

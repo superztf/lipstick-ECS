@@ -16,7 +16,8 @@ export declare type Entity = number;
 export class EntityAdmin {
     protected next_entity: Entity = 0;
     protected entities: Map<Entity, { [index: string]: Component }> = new Map();
-    protected components: Map<CLASS<Component>, Set<Entity>> = new Map();
+    protected comptowners: Map<CLASS<Component>, Set<Entity>> = new Map();
+    protected comptcontain: Map<CLASS<Component>, Set<Component>> = new Map();
     protected systems: System[] = [];
     protected deferments: Array<{ func: Function, args: any[] }> = [];
     protected pubcoms: Map<CLASS<Component>, Component> = new Map();
@@ -159,8 +160,11 @@ export class EntityAdmin {
         if (coms) {
             // tslint:disable-next-line:forin
             for (const cname in coms) {
-                const set = this.components.get(coms[cname].constructor as CLASS<Component>) as Set<number>;
-                set.delete(e);
+                const cobj = coms[cname];
+                const ents = this.comptowners.get(cobj.constructor as CLASS<Component>) as Set<number>;
+                ents.delete(e);
+                const compts = this.comptcontain.get(cobj.constructor as CLASS<Component>) as Set<Component>;
+                compts.delete(cobj);
 
             }
             this.entities.delete(e);
@@ -220,14 +224,20 @@ export class EntityAdmin {
                 if (c.entity) {
                     throwError(`${c.constructor.name} has been assign to ${c.entity}, cannot assign to ${e} repeatedly.`);
                 }
-                const cls = c.constructor as CLASS<Component>;
-                let set = this.components.get(cls);
-                if (!set) {
-                    set = new Set();
-                    this.components.set(cls, set);
-                }
-                set.add(e);
                 (c as any).m_entity = e;
+                const cls = c.constructor as CLASS<Component>;
+                let ents = this.comptowners.get(cls);
+                if (!ents) {
+                    ents = new Set();
+                    this.comptowners.set(cls, ents);
+                }
+                let cobjs = this.comptcontain.get(cls);
+                if (!cobjs) {
+                    cobjs = new Set();
+                    this.comptcontain.set(cls, cobjs);
+                }
+                ents.add(e);
+                cobjs.add(c);
                 if (this.watch_open && this.watch_compts.has(cls) && !coms[cls.name]) {
                     if (!effect_cnt) {
                         effect_cls = c.constructor as CLASS<Component>;
@@ -264,6 +274,11 @@ export class EntityAdmin {
         const coms = this.entities.get(e);
         if (coms) {
             for (const c of cclass) {
+                const compts = this.comptcontain.get(c);
+                if (compts) {
+                    const obj = coms[c.name];
+                    compts.delete(obj);
+                }
                 delete coms[c.name];
             }
         }
@@ -271,9 +286,9 @@ export class EntityAdmin {
         let effect_cnt = 0;
         let effect_cls: CLASS<Component> | undefined;
         for (const c of cclass) {
-            const set = this.components.get(c);
-            if (set) {
-                const ret = set.delete(e);
+            const ents = this.comptowners.get(c);
+            if (ents) {
+                const ret = ents.delete(e);
                 if (this.watch_open && ret && this.watch_compts.has(c)) {
                     if (!effect_cnt) {
                         effect_cls = c;
@@ -320,15 +335,12 @@ export class EntityAdmin {
      * @returns {IterableIterator<T>}
      * @memberof EntityAdmin
      */
-    public *GetComponents<T extends Component>(cclass: CLASS<T>): IterableIterator<T> {
-        const set = this.components.get(cclass);
-        if (set) {
-            for (const e of set.values()) {
-                const coms = this.entities.get(e);
-                if (coms && coms[cclass.name]) {
-                    yield coms[cclass.name] as T;
-                }
-            }
+    public GetComponents<T extends Component>(cclass: CLASS<T>): Set<T> {
+        const compts = this.comptcontain.get(cclass);
+        if (compts) {
+            return compts as Set<T>;
+        } else {
+            return new Set();
         }
     }
 
@@ -350,17 +362,16 @@ export class EntityAdmin {
      * @returns {IterableIterator<T>}
      * @memberof EntityAdmin
      */
-    public *GetComponentsByTuple<T extends Component>(...cclass: [CLASS<T>, ...Array<CLASS<Component>>]): IterableIterator<T> {
+    public GetComponentsByTuple<T extends Component>(...cclass: [CLASS<T>, ...Array<CLASS<Component>>]): Set<Component> {
         interface ICInfo { type: CLASS<Component>; len: number; }
         if (cclass.length <= 1) {
             return this.GetComponents(cclass[0]);
         }
-        const T_type = cclass[0];
         const length_info: ICInfo[] = [];
         for (const c of cclass) {
-            const set = this.components.get(c);
+            const set = this.comptowners.get(c);
             if (!set) {
-                return;
+                return new Set();
             }
             length_info.push({ type: c, len: set.size });
         }
@@ -368,6 +379,7 @@ export class EntityAdmin {
             return a.len - b.len;
         });
         const top = length_info.shift() as ICInfo;
+        const list = new Set();
         for (const c1 of this.GetComponents(top.type)) {
             let pass = true;
             for (const info of length_info) {
@@ -377,9 +389,10 @@ export class EntityAdmin {
                 }
             }
             if (pass) {
-                yield this.GetComponentByEntity(c1.entity, T_type) as T;
+                list.add(c1);
             }
         }
+        return list;
     }
 
     public AddWatchings(...fts: [IFilter, ...IFilter[]]) {
@@ -388,6 +401,9 @@ export class EntityAdmin {
         }
         if (!this.watch_open) { this.watch_open = true; }
         for (const f of fts) {
+            if (!f.all_of && !f.any_of && !f.none_of) {
+                throwError("IFilter invalid. can't be empty");
+            }
             for (const c of FilterComponents(f)) {
                 let set = this.watch_compts.get(c);
                 if (!set) {
@@ -433,12 +449,12 @@ export class EntityAdmin {
         return this.GetComponentByEntity(entity, cclass) as T;
     }
 
-    public *GetIndexsByFilter(f: IFilter): IterableIterator<Entity> {
+    public GetIndexsByFilter(f: IFilter): Set<Entity> {
         const set = this.watch_ents.get(f);
         if (set) {
-            for (const ent of set.values()) {
-                yield ent;
-            }
+            return set;
+        } else {
+            return new Set();
         }
     }
 
@@ -493,5 +509,9 @@ export class EntityAdmin {
                 set.delete(e);
             }
         }
+    }
+
+    protected checkfilter(f: IFilter) {
+
     }
 }
