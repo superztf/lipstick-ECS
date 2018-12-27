@@ -21,6 +21,10 @@ export class Component {
         return this.m_entity;
     }
 
+    protected get admin(): EntityAdmin {
+        return this.m_admin as EntityAdmin;
+    }
+
     /**
      * Owner entity ID. Before the component instance be assigned to an entity, m_entity is 0. 0 is not a valid entity forever.
      *
@@ -29,6 +33,7 @@ export class Component {
      * @memberof Component
      */
     protected m_entity: Entity = 0;
+    protected m_admin: EntityAdmin | undefined;
 
     /**
      * Get Sibling component. Sibling components means they have the same entity owner.
@@ -40,8 +45,8 @@ export class Component {
      * @returns {(T | undefined)}
      * @memberof Component
      */
-    public GetSibling<T extends Component>(admin: EntityAdmin, cclass: CLASS<T>): T | undefined {
-        return admin.GetComponentByEntity(this.m_entity, cclass);
+    public GetSibling<T extends Component>(cclass: CLASS<T>): T | undefined {
+        return this.admin.GetComponentByEntity(this.m_entity, cclass);
     }
 
     /**
@@ -54,8 +59,8 @@ export class Component {
      * @returns {T}
      * @memberof Component
      */
-    public SureSibling<T extends Component>(admin: EntityAdmin, cclass: CLASS<T>): T {
-        return admin.GetComponentByEntity(this.m_entity, cclass) as T;
+    public SureSibling<T extends Component>(cclass: CLASS<T>): T {
+        return this.admin.GetComponentByEntity(this.m_entity, cclass) as T;
     }
 
     /**
@@ -65,8 +70,8 @@ export class Component {
      * @param {...Component[]} cs A list of component instances.
      * @memberof Component
      */
-    public AddSibling(admin: EntityAdmin, ...cs: Component[]): void {
-        admin.AssignComponents(this.m_entity, ...cs);
+    public AddSibling(...cs: Component[]): void {
+        this.admin.AssignComponents(this.m_entity, ...cs);
     }
 
     /**
@@ -77,7 +82,7 @@ export class Component {
      * @param {...Array<CLASS<Component>>} cs A list of component instances.
      * @memberof Component
      */
-    public RemoveSibling(admin: EntityAdmin, ...cs: Array<CLASS<Component>>): void {
-        admin.RemoveComponents(this.m_entity, ...cs);
+    public RemoveSibling(...cs: Array<CLASS<Component>>): void {
+        this.admin.RemoveComponents(this.m_entity, ...cs);
     }
 }

@@ -226,6 +226,7 @@ export class EntityAdmin {
                     throwError(`${c.constructor.name} has been assign to ${c.entity}, cannot assign to ${e} repeatedly.`);
                 }
                 (c as any).m_entity = e;
+                (c as any).m_admin = this;
                 const cls = c.constructor as CLASS<Component>;
                 let ents = this.comptowners.get(cls);
                 if (!ents) {

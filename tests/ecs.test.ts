@@ -47,10 +47,10 @@ class SystemA extends System {
 class SystemB extends System {
     public static Update(admin: EntityAdmin, delta: number): void {
         for (const a of admin.GetComponentsByTuple(ComponentA, ComponentB, ComponentC, ComponentD)) {
-            const c = a.GetSibling(admin, ComponentC);
-            const d = a.GetSibling(admin, ComponentD);
+            const c = a.GetSibling(ComponentC);
+            const d = a.GetSibling(ComponentD);
             if (c && c.attr1 % 2 === 0) {
-                c.RemoveSibling(admin, ComponentB);
+                c.RemoveSibling(ComponentB);
             }
             if (d && c && d.attr1 % 2 === 0) {
                 c.attr2 = d.attr1.toString();
@@ -175,19 +175,19 @@ describe("ecs test", () => {
         const coma = new ComponentA();
         const key = 32546;
         admin.CreateEntity(coma, new ComponentC(key, ""));
-        const comc = coma.GetSibling(admin, ComponentC);
+        const comc = coma.GetSibling(ComponentC);
         if (comc) {
             expect(comc.attr1).toBe(key);
         } else {
             throw (new Error("component method err:ComponentC should be exist"));
         }
 
-        expect(coma.GetSibling(admin, ComponentB)).toBeUndefined();
-        coma.AddSibling(admin, new ComponentB());
-        expect(!!coma.GetSibling(admin, ComponentB)).toBeTruthy();
-        expect(!!coma.SureSibling(admin, ComponentB)).toBeTruthy();
-        coma.RemoveSibling(admin, ComponentB);
-        expect(!!coma.GetSibling(admin, ComponentB)).toBeFalsy();
+        expect(coma.GetSibling(ComponentB)).toBeUndefined();
+        coma.AddSibling(new ComponentB());
+        expect(!!coma.GetSibling(ComponentB)).toBeTruthy();
+        expect(!!coma.SureSibling(ComponentB)).toBeTruthy();
+        coma.RemoveSibling(ComponentB);
+        expect(!!coma.GetSibling(ComponentB)).toBeFalsy();
     });
     it("system update", () => {
         admin.stop();
@@ -221,35 +221,35 @@ describe("ecs test", () => {
         const cd4 = admin.GetComponentByEntity(e4, ComponentD);
         if (cd4) {
             expect(cd4.marked).toBeFalsy();
-            expect(!!cd4.GetSibling(admin, ComponentB)).toBeTruthy();
+            expect(!!cd4.GetSibling(ComponentB)).toBeTruthy();
         } else {
             throw (new Error("system update err"));
         }
         const cd5 = admin.GetComponentByEntity(e5, ComponentD);
         if (cd5) {
             expect(cd5.marked).toBeTruthy();
-            expect(!!cd5.GetSibling(admin, ComponentB)).toBeFalsy();
+            expect(!!cd5.GetSibling(ComponentB)).toBeFalsy();
         } else {
             throw (new Error("system update err"));
         }
         const cd6 = admin.GetComponentByEntity(e6, ComponentD);
         if (cd6) {
             expect(cd6.marked).toBeTruthy();
-            expect(!!cd6.GetSibling(admin, ComponentB)).toBeFalsy();
+            expect(!!cd6.GetSibling(ComponentB)).toBeFalsy();
         } else {
             throw (new Error("system update err"));
         }
         const cd7 = admin.GetComponentByEntity(e7, ComponentD);
         if (cd7) {
             expect(cd7.marked).toBeTruthy();
-            expect(!!cd7.GetSibling(admin, ComponentB)).toBeTruthy();
+            expect(!!cd7.GetSibling(ComponentB)).toBeTruthy();
         } else {
             throw (new Error("system update err"));
         }
         const cd8 = admin.GetComponentByEntity(e8, ComponentD);
         if (cd8) {
             expect(cd8.marked).toBeTruthy();
-            expect(!!cd8.GetSibling(admin, ComponentB)).toBeTruthy();
+            expect(!!cd8.GetSibling(ComponentB)).toBeTruthy();
         } else {
             throw (new Error("system update err"));
         }
