@@ -2,7 +2,7 @@ import { Component } from "./component";
 import { System } from "./system";
 import { present, CLASS, IFilter } from "./utils";
 import { throwError } from "./_utils";
-import { FilterComponents, IFilterID } from "./_filter";
+import { FilterComponents, IFilterID, CheckFilter } from "./_filter";
 
 export declare type Entity = number;
 
@@ -15,10 +15,10 @@ export declare type Entity = number;
  */
 export class EntityAdmin {
     protected next_entity: Entity = 0;
-    protected entities: Map<Entity, { [index: string]: Component }> = new Map();
+    protected entities: Map<Entity, Map<CLASS<Component>, Component>> = new Map();
     protected comptowners: Map<CLASS<Component>, Set<Entity>> = new Map();
     protected comptcontain: Map<CLASS<Component>, Set<Component>> = new Map();
-    protected systems: System[] = [];
+    protected systems: Array<{ priority: number, system: CLASS<System> }> = [];
     protected deferments: Array<{ func: Function, args: any[] }> = [];
     protected pubcoms: Map<CLASS<Component>, Component> = new Map();
     protected lastupdate: number = present();
@@ -109,9 +109,9 @@ export class EntityAdmin {
      * @param {number} [priority=0] Bigger number means higher priority. Priority determines the order of updating systems.
      * @memberof EntityAdmin
      */
-    public AddSystem(sclass: CLASS<System>, priority: number = 0) {
-        this.systems.push(new sclass(this, priority));
-        this.systems.sort((a: System, b: System) => {
+    public AddSystem(system: CLASS<System>, priority: number = 0) {
+        this.systems.push({ system, priority });
+        this.systems.sort((a, b) => {
             return b.priority - a.priority;
         });
     }
@@ -128,7 +128,7 @@ export class EntityAdmin {
             const delta = curtime - this.lastupdate;
             this.lastupdate = curtime;
             for (const s of this.systems) {
-                s.Update(delta);
+                (s.system as any).Update(this, delta); // todo
             }
             for (const delay of this.deferments) {
                 delay.func(...delay.args);
@@ -146,7 +146,7 @@ export class EntityAdmin {
      */
     public CreateEntity(...args: Component[]): Entity {
         const new_ent = ++this.next_entity;
-        this.entities.set(new_ent, {});
+        this.entities.set(new_ent, new Map());
         this.AssignComponents(new_ent, ...args);
         return new_ent;
     }
@@ -161,8 +161,7 @@ export class EntityAdmin {
         const coms = this.entities.get(e);
         if (coms) {
             // tslint:disable-next-line:forin
-            for (const cname in coms) {
-                const cobj = coms[cname];
+            for (const cobj of coms.values()) {
                 const ents = this.comptowners.get(cobj.constructor as CLASS<Component>) as Set<number>;
                 ents.delete(e);
                 const compts = this.comptcontain.get(cobj.constructor as CLASS<Component>) as Set<Component>;
@@ -195,7 +194,7 @@ export class EntityAdmin {
     public GetComponentByEntity<T extends Component>(entity: Entity, cclass: CLASS<T>): T | undefined {
         const coms = this.entities.get(entity);
         if (coms) {
-            return coms[cclass.name] as T;
+            return coms.get(cclass) as T;
         }
     }
 
@@ -240,7 +239,7 @@ export class EntityAdmin {
                 }
                 ents.add(e);
                 cobjs.add(c);
-                if (!coms[cls.name]) {
+                if (!coms.has(cls)) {
                     if (this.tuple_dirty.has(cls)) {
                         this.tuple_dirty.set(cls, true);
                     }
@@ -258,7 +257,7 @@ export class EntityAdmin {
                         this.entity_cidmap.set(e, cidmap);
                     }
                 }
-                coms[cls.name] = c;
+                coms.set(cls, c);
             }
         }
         if (effect_cnt === 1) {
@@ -281,12 +280,12 @@ export class EntityAdmin {
         const coms = this.entities.get(e);
         if (coms) {
             for (const c of cclass) {
-                const compts = this.comptcontain.get(c);
-                if (compts) {
-                    const obj = coms[c.name];
-                    compts.delete(obj);
+                const cobj = coms.get(c);
+                if (cobj) {
+                    coms.delete(c);
+                    const compts = this.comptcontain.get(c) as Set<Component>;
+                    compts.delete(cobj);
                 }
-                delete coms[c.name];
             }
         }
 
@@ -334,7 +333,7 @@ export class EntityAdmin {
      */
     public HasComponent(e: Entity, c: CLASS<Component>): boolean {
         const coms = this.entities.get(e);
-        if (coms && coms[c.name]) {
+        if (coms && coms.has(c)) {
             return true;
         }
         return false;
@@ -420,9 +419,7 @@ export class EntityAdmin {
         }
         if (!this.watch_open) { this.watch_open = true; }
         for (const f of fts) {
-            if (!f.all_of && !f.any_of && !f.none_of) {
-                throwError("IFilter invalid. can't be empty");
-            }
+            CheckFilter(f);
             for (const c of FilterComponents(f)) {
                 let set = this.watch_compts.get(c);
                 if (!set) {
@@ -558,8 +555,4 @@ export class EntityAdmin {
         }
         this.tuple_cache.set(tupleid, set);
     }
-
-    // protected checkfilter(f: IFilter) {
-
-    // }
 }

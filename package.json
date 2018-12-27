@@ -1,9 +1,12 @@
 {
   "name": "lipstick-ecs",
-  "version": "0.1.4",
-  "description": "A pretty fast entity-component-system framework in typescript.",
+  "version": "0.2.2",
+  "description": "This is a test version",
   "keywords": [
     "entity component system",
+    "entity",
+    "component",
+    "system",
     "ECS",
     "node",
     "nodejs",

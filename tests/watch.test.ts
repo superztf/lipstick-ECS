@@ -56,6 +56,10 @@ describe("test watch funtion", () => {
         }).toThrowError(/^ECS-ERROR:/);
         admin.ClearAllEntity();
         admin.AddWatchings(Match_1, Match_2, Match_3, Match_4, Match_5, Match_6, Match_7);
+        const new_match: IFilter = { all_of: [SimpleComptA], none_of: [SimpleComptA] };
+        expect(() => {
+            admin.AddWatchings(new_match);
+        }).toThrowError(/^ECS-ERROR:/);
     });
     it("MatchCountByFilter", () => {
         admin.CreateEntity(new SimpleComptA(), new SimpleComptB(), new SimpleComptC(), new SimpleComptD());

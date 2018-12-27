@@ -1,6 +1,7 @@
 import { EntityAdmin } from "../src/EntityAdmin";
 import { Component } from "../src/component";
 import { System } from "../src/system";
+import { CLASS } from "../src/utils";
 
 class ComponentA extends Component {
     public attr1 = 0;
@@ -36,20 +37,20 @@ class ComponentE extends Component {
 }
 
 class SystemA extends System {
-    public Update(timeStep: number): void {
-        for (const c of this.admin.GetComponentsByTuple(ComponentA)) {
+    public static Update(admin: EntityAdmin, timeStep: number): void {
+        for (const c of admin.GetComponentsByTuple(ComponentA)) {
 
         }
     }
 }
 
 class SystemB extends System {
-    public Update(delta: number): void {
-        for (const a of this.admin.GetComponentsByTuple(ComponentA, ComponentB, ComponentC, ComponentD)) {
-            const c = a.GetSibling(this.admin, ComponentC);
-            const d = a.GetSibling(this.admin, ComponentD);
+    public static Update(admin: EntityAdmin, delta: number): void {
+        for (const a of admin.GetComponentsByTuple(ComponentA, ComponentB, ComponentC, ComponentD)) {
+            const c = a.GetSibling(admin, ComponentC);
+            const d = a.GetSibling(admin, ComponentD);
             if (c && c.attr1 % 2 === 0) {
-                c.RemoveSibling(this.admin, ComponentB);
+                c.RemoveSibling(admin, ComponentB);
             }
             if (d && c && d.attr1 % 2 === 0) {
                 c.attr2 = d.attr1.toString();
@@ -62,8 +63,8 @@ class SystemB extends System {
 }
 
 class SystemC extends System {
-    public Update(timeStep: number): void {
-        for (const c of this.admin.GetComponentsByTuple(ComponentA, ComponentE)) {
+    public static Update(admin: EntityAdmin, timeStep: number): void {
+        for (const c of admin.GetComponentsByTuple(ComponentA, ComponentE)) {
 
         }
     }
@@ -139,7 +140,7 @@ describe("ecs test", () => {
         admin.AddSystem(SystemA, 2);
         admin.AddSystem(SystemA);
         let i = 3;
-        for (const s of (admin as any).systems as SystemA[]) {
+        for (const s of (admin as any).systems as Array<{ priority: number, system: CLASS<System> }>) {
             expect(s.priority).toBe(i);
             --i;
         }
@@ -270,5 +271,9 @@ describe("ecs test", () => {
         const e1 = admin.CreateEntity();
         class NewCompt1 extends Component { }
         admin.RemoveComponents(e1, NewCompt1);
+
+        expect(() => {
+            System.Update(admin, 1);
+        }).toThrowError(/^ECS-ERROR:/);
     });
 });

@@ -1,5 +1,6 @@
 import { IFilter, CLASS } from "./utils";
 import { Component } from "./component";
+import { throwError } from "./_utils";
 
 export interface IFilterID {
     all_id: number;
@@ -25,4 +26,17 @@ export function FilterComponents(filter: IFilter): Array<CLASS<Component>> {
         }
     }
     return list;
+}
+
+export function CheckFilter(f: IFilter) {
+    if (!f.all_of && !f.any_of && !f.none_of) {
+        throwError("IFilter invalid. It can't be empty");
+    }
+    const set: Set<CLASS<Component>> = new Set();
+    for (const c of FilterComponents(f)) {
+        if (set.has(c)) {
+            throwError("IFilter invalid. Duplicate components " + c.name);
+        }
+        set.add(c);
+    }
 }
