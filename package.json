@@ -1,7 +1,7 @@
 {
   "name": "lipstick-ecs",
-  "version": "0.2.2",
-  "description": "This is a test version",
+  "version": "0.2.3",
+  "description": "entity-component-system in typescript",
   "keywords": [
     "entity component system",
     "entity",

@@ -12,8 +12,11 @@
 ```bash
 $ npm install lipstick-ecs --save
 ```
+
+>This is a big change from 0.1.4 to ^0.2.0. And documentation for the ^0.2.0 version is not ready yet.
+
 * [Source Code](https://github.com/superztf/lipstick-ECS/tree/watching_components)
 * [ECS Concept](https://en.wikipedia.org/wiki/Entity%E2%80%93component%E2%80%93system)
-* [Documentation](https://superztf.github.io/lipstick-ECS/globals.html)
-* [Example Code](https://github.com/superztf/ECS-example)
+* [Documentation v0.1.4](https://superztf.github.io/lipstick-ECS/globals.html)
+* [Example Code v0.1.4](https://github.com/superztf/ECS-example)
 
