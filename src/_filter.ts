@@ -1,5 +1,4 @@
 import { IFilter, CLASS } from "./utils";
-import { EntityAdmin, Entity } from "./EntityAdmin";
 import { Component } from "./component";
 
 export interface IFilterID {
@@ -8,20 +7,22 @@ export interface IFilterID {
     any_id: number;
 }
 
-export function* FilterComponents(filter: IFilter): IterableIterator<CLASS<Component>> {
+export function FilterComponents(filter: IFilter): Array<CLASS<Component>> {
+    const list = [];
     if (filter.all_of) {
         for (const c of filter.all_of) {
-            yield c;
+            list.push(c);
         }
     }
     if (filter.any_of) {
         for (const c of filter.any_of) {
-            yield c;
+            list.push(c);
         }
     }
     if (filter.none_of) {
         for (const c of filter.none_of) {
-            yield c;
+            list.push(c);
         }
     }
+    return list;
 }
