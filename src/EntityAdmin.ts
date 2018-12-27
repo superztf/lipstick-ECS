@@ -30,6 +30,8 @@ export class EntityAdmin {
     protected watch_fid: Map<IFilter, IFilterID> = new Map();
     protected next_cid: number = 0;
     protected entity_cidmap: Map<Entity, number> = new Map();
+    protected tuple_cache: Map<number, Set<Component>> = new Map();
+    protected tuple_dirty: Map<CLASS<Component>, boolean> = new Map();
 
     /**
      * The default running state is false. This method set it true. EntityAdmin.UpdateSystems() can work only in running===true state.
@@ -238,18 +240,23 @@ export class EntityAdmin {
                 }
                 ents.add(e);
                 cobjs.add(c);
-                if (this.watch_open && this.watch_compts.has(cls) && !coms[cls.name]) {
-                    if (!effect_cnt) {
-                        effect_cls = c.constructor as CLASS<Component>;
+                if (!coms[cls.name]) {
+                    if (this.tuple_dirty.has(cls)) {
+                        this.tuple_dirty.set(cls, true);
                     }
-                    ++effect_cnt;
-                    let cidmap: number = 0;
-                    const cache = this.entity_cidmap.get(e);
-                    if (cache) {
-                        cidmap = cache;
+                    if (this.watch_open && this.watch_compts.has(cls)) {
+                        if (!effect_cnt) {
+                            effect_cls = c.constructor as CLASS<Component>;
+                        }
+                        ++effect_cnt;
+                        let cidmap: number = 0;
+                        const oldcid = this.entity_cidmap.get(e);
+                        if (oldcid) {
+                            cidmap = oldcid;
+                        }
+                        cidmap |= 1 << this.getcid(cls);
+                        this.entity_cidmap.set(e, cidmap);
                     }
-                    cidmap |= 1 << this.getcid(cls);
-                    this.entity_cidmap.set(e, cidmap);
                 }
                 coms[cls.name] = c;
             }
@@ -285,22 +292,28 @@ export class EntityAdmin {
 
         let effect_cnt = 0;
         let effect_cls: CLASS<Component> | undefined;
-        for (const c of cclass) {
-            const ents = this.comptowners.get(c);
+        for (const cls of cclass) {
+            const ents = this.comptowners.get(cls);
             if (ents) {
                 const ret = ents.delete(e);
-                if (this.watch_open && ret && this.watch_compts.has(c)) {
-                    if (!effect_cnt) {
-                        effect_cls = c;
+                if (ret) {
+                    if (this.tuple_dirty.has(cls)) {
+                        this.tuple_dirty.set(cls, true);
                     }
-                    ++effect_cnt;
-                    let cidmap = this.entity_cidmap.get(e) as number;
-                    const pos = this.getcid(c);
-                    if (cidmap & (1 << pos)) {
-                        cidmap ^= 1 << pos;
-                        this.entity_cidmap.set(e, cidmap);
+                    if (this.watch_open && this.watch_compts.has(cls)) {
+                        if (!effect_cnt) {
+                            effect_cls = cls;
+                        }
+                        ++effect_cnt;
+                        let cidmap = this.entity_cidmap.get(e) as number;
+                        const pos = this.getcid(cls);
+                        if (cidmap & (1 << pos)) {
+                            cidmap ^= 1 << pos;
+                            this.entity_cidmap.set(e, cidmap);
+                        }
                     }
                 }
+
             }
         }
         if (effect_cnt === 1) {
@@ -363,10 +376,15 @@ export class EntityAdmin {
      * @memberof EntityAdmin
      */
     public GetComponentsByTuple<T extends Component>(...cclass: [CLASS<T>, ...Array<CLASS<Component>>]): Set<Component> {
-        interface ICInfo { type: CLASS<Component>; len: number; }
         if (cclass.length <= 1) {
             return this.GetComponents(cclass[0]);
         }
+        const cache = this.tryGetTupleCache(cclass);
+        if (cache) {
+            return cache;
+        }
+        interface ICInfo { type: CLASS<Component>; len: number; }
+        const top = cclass[0];
         const length_info: ICInfo[] = [];
         for (const c of cclass) {
             const set = this.comptowners.get(c);
@@ -378,9 +396,9 @@ export class EntityAdmin {
         length_info.sort((a, b) => {
             return a.len - b.len;
         });
-        const top = length_info.shift() as ICInfo;
+
         const list = new Set();
-        for (const c1 of this.GetComponents(top.type)) {
+        for (const c1 of this.GetComponents(top)) {
             let pass = true;
             for (const info of length_info) {
                 if (!this.GetComponentByEntity(c1.entity, info.type)) {
@@ -392,6 +410,7 @@ export class EntityAdmin {
                 list.add(c1);
             }
         }
+        this.updateTupleCache(cclass, list);
         return list;
     }
 
@@ -511,7 +530,36 @@ export class EntityAdmin {
         }
     }
 
-    protected checkfilter(f: IFilter) {
-
+    protected tryGetTupleCache(listc: Array<CLASS<Component>>): void | Set<Component> {
+        let tupleid = 0;
+        for (const c of listc) {
+            if (!this.tuple_dirty.has(c)) {
+                this.tuple_dirty.set(c, true);
+            }
+            if (!this.watch_cid.has(c)) {
+                this.watch_cid.set(c, this.next_cid);
+                this.next_cid++;
+            }
+        }
+        for (const c of listc) {
+            if (this.tuple_dirty.get(c)) {
+                return;
+            }
+            tupleid |= 1 << this.getcid(c);
+        }
+        return this.tuple_cache.get(tupleid);
     }
+
+    protected updateTupleCache(listc: Array<CLASS<Component>>, set: Set<Component>) {
+        let tupleid = 0;
+        for (const c of listc) {
+            tupleid |= 1 << this.getcid(c);
+            this.tuple_dirty.set(c, false);
+        }
+        this.tuple_cache.set(tupleid, set);
+    }
+
+    // protected checkfilter(f: IFilter) {
+
+    // }
 }

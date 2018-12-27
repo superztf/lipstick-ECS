@@ -123,6 +123,15 @@ describe("ecs test", () => {
         expect(() => {
             admin.AssignComponents(e, newc);
         }).toThrowError(/^ECS-ERROR:/);
+
+        // assgin the same type component
+        admin.AssignComponents(e, new ComponentC(key, "world"));
+        admin.AssignComponents(e, new ComponentC(key, "world"));
+    });
+    it("remove component", () => {
+        const e = admin.CreateEntity();
+        admin.AssignComponents(e, new ComponentC(1, "world"));
+        admin.RemoveComponents(e, ComponentC, ComponentC);
     });
     it("add system", () => {
         admin.AddSystem(SystemA, 3);
@@ -243,6 +252,10 @@ describe("ecs test", () => {
         } else {
             throw (new Error("system update err"));
         }
+        admin.UpdateSystems(1);
+        admin.UpdateSystems(1);
+        admin.UpdateSystems(1);
+        admin.UpdateSystems(1);
     });
     it("fix coverage", () => {
         class TEST extends Component {
