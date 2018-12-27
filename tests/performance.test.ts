@@ -3,7 +3,7 @@ import { EntityAdmin } from "../src/EntityAdmin";
 import { SimpleComptA, SimpleComptC, SimpleComptB, SimpleComptD, SimpleComptE, SimpleComptG, SimpleComptF } from "./components";
 import { Match_1, Match_2, Match_3, Match_4, Match_5, Match_6, Match_7 } from "./filters";
 const logger = console;
-const NUM = 30000;
+const NUM = 10000;
 /**
  * TEST ENV:
  * node v8.9.3
@@ -13,11 +13,12 @@ describe("performance test", () => {
     const admin = new EntityAdmin();
     admin.AddWatchings(Match_1, Match_2, Match_3, Match_4, Match_5, Match_6, Match_7);
     it("run one frame", () => {
-        const st = present();
+        const st = process.uptime();
         // create entities
         for (let i = 0; i < NUM; ++i) {
             admin.CreateEntity();
         }
+        const mark1 = process.uptime();
         // assign components
         for (let i = 1; i < NUM * 3 / 10 + 1; ++i) {
             admin.AssignComponents(i, new SimpleComptA());
@@ -30,7 +31,10 @@ describe("performance test", () => {
         for (let i = NUM * 6 / 10; i < NUM; ++i) {
             admin.AssignComponents(i, new SimpleComptG());
         }
+        logger.log("assign use", (process.uptime() - mark1) * 1000);
+
         // Iterating 100 times over the entities matched by Match_5, and get SimpleComptA,SimpleComptB,SimpleComptC for ench entity
+        const mark2 = process.uptime();
         for (let i = 0; i < 100; ++i) {
             for (const e of admin.GetIndexsByFilter(Match_5)) { // Match_5
                 const compt_a = admin.GetComponentByIndex(e, SimpleComptA);
@@ -38,7 +42,10 @@ describe("performance test", () => {
                 const compt_c = admin.GetComponentByIndex(e, SimpleComptC);
             }
         }
+        logger.log("Iterating use", (process.uptime() - mark2) * 1000);
+
         // remove all components
+        const mark3 = process.uptime();
         for (let i = 1; i < NUM * 3 / 10 + 1; ++i) {
             admin.RemoveComponents(i, SimpleComptA);
             admin.RemoveComponents(i, SimpleComptB, SimpleComptC);
@@ -50,14 +57,16 @@ describe("performance test", () => {
         for (let i = NUM * 6 / 10; i < NUM; ++i) {
             admin.RemoveComponents(i, SimpleComptG);
         }
+        logger.log("remove components use", (process.uptime() - mark3) * 1000);
+
         // delete all entities
         for (let i = 1; i < NUM + 1; ++i) {
             admin.DeleteEntity(i);
         }
-        const ed = present();
-        const use = (ed - st) / 1000;
+        const ed = process.uptime();
+        const use = (ed - st) * 1000;
         logger.log("use time:", use, "ms");
-        // expect cost time less than 1ms in one frame.
-        expect(use).toBeLessThan(1);
+        // TODO: expect cost time less than 16ms in one frame.
+        expect(use).toBeLessThan(16);
     });
 });
