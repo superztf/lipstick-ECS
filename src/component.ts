@@ -1,5 +1,5 @@
 import { EntityAdmin, Entity } from "./EntityAdmin";
-import { CLASS } from "./utils";
+import { CLASS, ComponentType } from "./utils";
 
 /**
  * class for all Components to inherit from.
@@ -24,6 +24,7 @@ export class Component {
     protected get admin(): EntityAdmin {
         return this.m_admin as EntityAdmin;
     }
+    public static id: number = 0;
 
     /**
      * Owner entity ID. Before the component instance be assigned to an entity, m_entity is 0. 0 is not a valid entity forever.
@@ -34,6 +35,7 @@ export class Component {
      */
     protected m_entity: Entity = 0;
     protected m_admin: EntityAdmin | undefined;
+    constructor(...args: any[]) { }
 
     /**
      * Get Sibling component. Sibling components means they have the same entity owner.
@@ -82,7 +84,7 @@ export class Component {
      * @param {...Array<CLASS<Component>>} cs A list of component instances.
      * @memberof Component
      */
-    public RemoveSibling(...cs: Array<CLASS<Component>>): void {
+    public RemoveSibling(...cs: ComponentType[]): void {
         this.admin.RemoveComponents(this.m_entity, ...cs);
     }
 }

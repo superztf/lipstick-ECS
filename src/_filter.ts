@@ -1,4 +1,4 @@
-import { IFilter, CLASS } from "./utils";
+import { IFilter, CLASS, ComponentType } from "./utils";
 import { Component } from "./component";
 import { throwError } from "./_utils";
 
@@ -8,7 +8,7 @@ export interface IFilterID {
     any_id: number;
 }
 
-export function FilterComponents(filter: IFilter): Array<CLASS<Component>> {
+export function FilterComponents(filter: IFilter): ComponentType[] {
     const list = [];
     if (filter.all_of) {
         for (const c of filter.all_of) {

@@ -1,11 +1,14 @@
 import { Component } from "./component";
+import { System } from "./system";
 
+export type ComponentType = typeof Component;
+export type SystemType = typeof System;
 export type CLASS<T> = new (...args: any) => T;
 
 export interface IFilter {
-    all_of?: [CLASS<Component>, ...Array<CLASS<Component>>];
-    any_of?: [CLASS<Component>, ...Array<CLASS<Component>>];
-    none_of?: [CLASS<Component>, ...Array<CLASS<Component>>];
+    all_of?: [ComponentType, ...ComponentType[]];
+    any_of?: [ComponentType, ...ComponentType[]];
+    none_of?: [ComponentType, ...ComponentType[]];
 }
 
 /**

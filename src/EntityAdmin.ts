@@ -1,6 +1,6 @@
 import { Component } from "./component";
 import { System } from "./system";
-import { present, CLASS, IFilter } from "./utils";
+import { present, CLASS, IFilter, ComponentType } from "./utils";
 import { throwError } from "./_utils";
 import { FilterComponents, IFilterID, CheckFilter } from "./_filter";
 
@@ -21,14 +21,13 @@ export class EntityAdmin {
     protected systems: Array<{ priority: number, system: CLASS<System> }> = [];
     protected deferments: Array<{ func: Function, args: any[] }> = [];
     protected pubcoms: Map<CLASS<Component>, Component> = new Map();
-    protected lastupdate: number = present();
+    protected lastupdate: number = 0;
     protected running: boolean = false;
     protected watch_open: boolean = false;
     protected watch_compts: Map<CLASS<Component>, Set<IFilter>> = new Map();
     protected watch_ents: Map<IFilter, Set<Entity>> = new Map();
-    protected watch_cid: Map<CLASS<Component>, number> = new Map();
     protected watch_fid: Map<IFilter, IFilterID> = new Map();
-    protected next_cid: number = 0;
+    protected next_cid: number = 1;
     protected entity_cidmap: Map<Entity, number> = new Map();
     protected tuple_cache: Map<number, Set<Component>> = new Map();
     protected tuple_dirty: Map<CLASS<Component>, boolean> = new Map();
@@ -227,7 +226,7 @@ export class EntityAdmin {
                 }
                 (c as any).m_entity = e;
                 (c as any).m_admin = this;
-                const cls = c.constructor as CLASS<Component>;
+                const cls = c.constructor as ComponentType;
                 let ents = this.comptowners.get(cls);
                 if (!ents) {
                     ents = new Set();
@@ -254,7 +253,7 @@ export class EntityAdmin {
                         if (oldcid) {
                             cidmap = oldcid;
                         }
-                        cidmap |= 1 << this.getcid(cls);
+                        cidmap |= 1 << cls.id;
                         this.entity_cidmap.set(e, cidmap);
                     }
                 }
@@ -277,7 +276,7 @@ export class EntityAdmin {
      * @param {...Array<CLASS<T>>} cclass A list of component class name.
      * @memberof EntityAdmin
      */
-    public RemoveComponents(e: Entity, ...cclass: Array<CLASS<Component>>) {
+    public RemoveComponents(e: Entity, ...cclass: ComponentType[]) {
         const coms = this.entities.get(e);
         if (coms) {
             for (const c of cclass) {
@@ -306,7 +305,7 @@ export class EntityAdmin {
                         }
                         ++effect_cnt;
                         let cidmap = this.entity_cidmap.get(e) as number;
-                        const pos = this.getcid(cls);
+                        const pos = cls.id;
                         if (cidmap & (1 << pos)) {
                             cidmap ^= 1 << pos;
                             this.entity_cidmap.set(e, cidmap);
@@ -379,7 +378,7 @@ export class EntityAdmin {
         if (cclass.length <= 1) {
             return this.GetComponents(cclass[0]);
         }
-        const cache = this.tryGetTupleCache(cclass);
+        const cache = this.tryGetTupleCache(cclass as any);
         if (cache) {
             return cache;
         }
@@ -410,7 +409,7 @@ export class EntityAdmin {
                 list.add(c1);
             }
         }
-        this.updateTupleCache(cclass, list);
+        this.updateTupleCache(cclass as any, list);
         return list;
     }
 
@@ -429,9 +428,8 @@ export class EntityAdmin {
                 }
                 set.add(f);
                 // generate component id
-                if (!this.watch_cid.has(c)) {
-                    this.watch_cid.set(c, this.next_cid);
-                    ++this.next_cid;
+                if (!c.id) {
+                    c.id = this.next_cid++;
                 }
             }
             // generate filter id
@@ -441,17 +439,17 @@ export class EntityAdmin {
                 let any_id = 0;
                 if (f.all_of) {
                     for (const c of f.all_of) {
-                        all_id |= 1 << this.getcid(c);
+                        all_id |= 1 << c.id;
                     }
                 }
                 if (f.any_of) {
                     for (const c of f.any_of) {
-                        any_id |= 1 << this.getcid(c);
+                        any_id |= 1 << c.id;
                     }
                 }
                 if (f.none_of) {
                     for (const c of f.none_of) {
-                        none_id |= 1 << this.getcid(c);
+                        none_id |= 1 << c.id;
                     }
                 }
                 this.watch_fid.set(f, { all_id, none_id, any_id });
@@ -463,7 +461,8 @@ export class EntityAdmin {
     }
 
     public GetComponentByIndex<T extends Component>(entity: Entity, cclass: CLASS<T>): T {
-        return this.GetComponentByEntity(entity, cclass) as T;
+        const coms = this.entities.get(entity);
+        return (coms as Map<CLASS<Component>, Component>).get(cclass) as T;
     }
 
     public GetIndexsByFilter(f: IFilter): Set<Entity> {
@@ -501,11 +500,6 @@ export class EntityAdmin {
         return true;
     }
 
-    protected getcid(c: CLASS<Component>): number {
-        // should confirm c in watch_cid when call this method
-        return this.watch_cid.get(c) as number;
-    }
-
     protected afterMultiComptChange(e: Entity) {
         for (const [fobj, set] of this.watch_ents.entries()) {
             if (this.matchFilter(e, fobj)) {
@@ -528,30 +522,29 @@ export class EntityAdmin {
         }
     }
 
-    protected tryGetTupleCache(listc: Array<CLASS<Component>>): void | Set<Component> {
+    protected tryGetTupleCache(listc: ComponentType[]): void | Set<Component> {
         let tupleid = 0;
         for (const c of listc) {
             if (!this.tuple_dirty.has(c)) {
                 this.tuple_dirty.set(c, true);
             }
-            if (!this.watch_cid.has(c)) {
-                this.watch_cid.set(c, this.next_cid);
-                this.next_cid++;
+            if (!c.id) {
+                c.id = this.next_cid++;
             }
         }
         for (const c of listc) {
             if (this.tuple_dirty.get(c)) {
                 return;
             }
-            tupleid |= 1 << this.getcid(c);
+            tupleid |= 1 << c.id;
         }
         return this.tuple_cache.get(tupleid);
     }
 
-    protected updateTupleCache(listc: Array<CLASS<Component>>, set: Set<Component>) {
+    protected updateTupleCache(listc: ComponentType[], set: Set<Component>) {
         let tupleid = 0;
         for (const c of listc) {
-            tupleid |= 1 << this.getcid(c);
+            tupleid |= 1 << c.id;
             this.tuple_dirty.set(c, false);
         }
         this.tuple_cache.set(tupleid, set);
