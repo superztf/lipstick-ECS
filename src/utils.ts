@@ -3,7 +3,11 @@ import { System } from "./system";
 
 export type ComponentType = typeof Component;
 export type SystemType = typeof System;
-export type CLASS<T> = new (...args: any) => T;
+// tslint:disable-next-line:interface-name
+export interface CLASS<T> {
+    id: number;
+    new(...p: any[]): T;
+}
 
 export interface IFilter {
     all_of?: [ComponentType, ...ComponentType[]];
