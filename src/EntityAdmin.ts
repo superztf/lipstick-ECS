@@ -237,6 +237,15 @@ export class EntityAdmin {
         }
     }
 
+    public GetComponentSize(cclass: ComponentType): number {
+        const compts = this.comptcontain.get(cclass);
+        if (compts) {
+            return compts.size;
+        } else {
+            return 0;
+        }
+    }
+
     public GetComponentsByTuple<T extends Component>(...cclass: [CLASS<T>, ...ComponentType[]]): Set<Component> {
         if (cclass.length <= 1) {
             return this.GetComponents(cclass[0]);

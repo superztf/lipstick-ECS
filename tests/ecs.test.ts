@@ -108,11 +108,14 @@ describe("ecs test", () => {
         expect(admin.ValidEntity(e1)).toBe(false);
     });
     it("assgin component", () => {
+        admin.ClearAllEntity();
         const key = 2333;
         const e = admin.CreateEntity();
         expect(admin.HasComponent(e, ComponentC)).toBeFalsy();
+        expect(admin.GetComponentSize(ComponentC)).toBe(0);
         admin.AssignComponents(e, new ComponentC(key, "world"));
         expect(admin.HasComponent(e, ComponentC)).toBeTruthy();
+        expect(admin.GetComponentSize(ComponentC)).toBe(1);
         const c = admin.GetComponentByEntity(e, ComponentC);
         if (c) {
             expect(c.attr1).toBe(key);
@@ -271,7 +274,7 @@ describe("ecs test", () => {
         const e1 = admin.CreateEntity();
         class NewCompt1 extends Component { }
         admin.RemoveComponents(e1, NewCompt1);
-
+        admin.GetComponentSize(NewCompt1);
         expect(() => {
             System.Update(admin, 1);
         }).toThrowError(/^ECS-ERROR:/);
