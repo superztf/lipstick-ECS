@@ -89,7 +89,6 @@ export class EntityAdmin {
     public DeleteEntity(e: Entity): void {
         const coms = this.entities.get(e);
         if (coms) {
-            // tslint:disable-next-line:forin
             for (const cobj of coms.values()) {
                 const ents = this.comptowners.get(cobj.constructor as ComponentType) as Set<number>;
                 ents.delete(e);
