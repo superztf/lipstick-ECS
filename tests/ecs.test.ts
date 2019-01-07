@@ -1,6 +1,7 @@
-import { EntityAdmin, Entity } from "../src/EntityAdmin";
+import { EntityAdmin } from "../src/EntityAdmin";
 import { Component } from "../src/component";
 import { System } from "../src/system";
+import { SystemType } from "../src/utils";
 
 class ComponentA extends Component {
     public attr1 = 0;
@@ -36,20 +37,20 @@ class ComponentE extends Component {
 }
 
 class SystemA extends System {
-    public Update(timeStep: number): void {
-        for (const c of this.admin.GetComponentsByTuple(ComponentA)) {
+    public static Update(admin: EntityAdmin, timeStep: number): void {
+        for (const c of admin.GetComponentsByTuple(ComponentA)) {
 
         }
     }
 }
 
 class SystemB extends System {
-    public Update(delta: number): void {
-        for (const a of this.admin.GetComponentsByTuple(ComponentA, ComponentB, ComponentC, ComponentD)) {
-            const c = a.GetSibling(this.admin, ComponentC);
-            const d = a.GetSibling(this.admin, ComponentD);
+    public static Update(admin: EntityAdmin, delta: number): void {
+        for (const a of admin.GetComponentsByTuple(ComponentA, ComponentB, ComponentC, ComponentD)) {
+            const c = a.GetSibling(ComponentC);
+            const d = a.GetSibling(ComponentD);
             if (c && c.attr1 % 2 === 0) {
-                c.RemoveSibling(this.admin, ComponentB);
+                c.RemoveSibling(ComponentB);
             }
             if (d && c && d.attr1 % 2 === 0) {
                 c.attr2 = d.attr1.toString();
@@ -62,8 +63,8 @@ class SystemB extends System {
 }
 
 class SystemC extends System {
-    public Update(timeStep: number): void {
-        for (const c of this.admin.GetComponentsByTuple(ComponentA, ComponentE)) {
+    public static Update(admin: EntityAdmin, timeStep: number): void {
+        for (const c of admin.GetComponentsByTuple(ComponentA, ComponentE)) {
 
         }
     }
@@ -107,11 +108,14 @@ describe("ecs test", () => {
         expect(admin.ValidEntity(e1)).toBe(false);
     });
     it("assgin component", () => {
+        admin.ClearAllEntity();
         const key = 2333;
         const e = admin.CreateEntity();
         expect(admin.HasComponent(e, ComponentC)).toBeFalsy();
+        expect(admin.GetComponentSize(ComponentC)).toBe(0);
         admin.AssignComponents(e, new ComponentC(key, "world"));
         expect(admin.HasComponent(e, ComponentC)).toBeTruthy();
+        expect(admin.GetComponentSize(ComponentC)).toBe(1);
         const c = admin.GetComponentByEntity(e, ComponentC);
         if (c) {
             expect(c.attr1).toBe(key);
@@ -123,6 +127,15 @@ describe("ecs test", () => {
         expect(() => {
             admin.AssignComponents(e, newc);
         }).toThrowError(/^ECS-ERROR:/);
+
+        // assgin the same type component
+        admin.AssignComponents(e, new ComponentC(key, "world"));
+        admin.AssignComponents(e, new ComponentC(key, "world"));
+    });
+    it("remove component", () => {
+        const e = admin.CreateEntity();
+        admin.AssignComponents(e, new ComponentC(1, "world"));
+        admin.RemoveComponents(e, ComponentC, ComponentC);
     });
     it("add system", () => {
         admin.AddSystem(SystemA, 3);
@@ -130,7 +143,7 @@ describe("ecs test", () => {
         admin.AddSystem(SystemA, 2);
         admin.AddSystem(SystemA);
         let i = 3;
-        for (const s of (admin as any).systems as SystemA[]) {
+        for (const s of (admin as any).systems as Array<{ priority: number, system: SystemType }>) {
             expect(s.priority).toBe(i);
             --i;
         }
@@ -165,19 +178,19 @@ describe("ecs test", () => {
         const coma = new ComponentA();
         const key = 32546;
         admin.CreateEntity(coma, new ComponentC(key, ""));
-        const comc = coma.GetSibling(admin, ComponentC);
+        const comc = coma.GetSibling(ComponentC);
         if (comc) {
             expect(comc.attr1).toBe(key);
         } else {
             throw (new Error("component method err:ComponentC should be exist"));
         }
 
-        expect(coma.GetSibling(admin, ComponentB)).toBeUndefined();
-        coma.AddSibling(admin, new ComponentB());
-        expect(!!coma.GetSibling(admin, ComponentB)).toBeTruthy();
-        expect(!!coma.SureSibling(admin, ComponentB)).toBeTruthy();
-        coma.RemoveSibling(admin, ComponentB);
-        expect(!!coma.GetSibling(admin, ComponentB)).toBeFalsy();
+        expect(coma.GetSibling(ComponentB)).toBeUndefined();
+        coma.AddSibling(new ComponentB());
+        expect(!!coma.GetSibling(ComponentB)).toBeTruthy();
+        expect(!!coma.SureSibling(ComponentB)).toBeTruthy();
+        coma.RemoveSibling(ComponentB);
+        expect(!!coma.GetSibling(ComponentB)).toBeFalsy();
     });
     it("system update", () => {
         admin.stop();
@@ -211,38 +224,42 @@ describe("ecs test", () => {
         const cd4 = admin.GetComponentByEntity(e4, ComponentD);
         if (cd4) {
             expect(cd4.marked).toBeFalsy();
-            expect(!!cd4.GetSibling(admin, ComponentB)).toBeTruthy();
+            expect(!!cd4.GetSibling(ComponentB)).toBeTruthy();
         } else {
             throw (new Error("system update err"));
         }
         const cd5 = admin.GetComponentByEntity(e5, ComponentD);
         if (cd5) {
             expect(cd5.marked).toBeTruthy();
-            expect(!!cd5.GetSibling(admin, ComponentB)).toBeFalsy();
+            expect(!!cd5.GetSibling(ComponentB)).toBeFalsy();
         } else {
             throw (new Error("system update err"));
         }
         const cd6 = admin.GetComponentByEntity(e6, ComponentD);
         if (cd6) {
             expect(cd6.marked).toBeTruthy();
-            expect(!!cd6.GetSibling(admin, ComponentB)).toBeFalsy();
+            expect(!!cd6.GetSibling(ComponentB)).toBeFalsy();
         } else {
             throw (new Error("system update err"));
         }
         const cd7 = admin.GetComponentByEntity(e7, ComponentD);
         if (cd7) {
             expect(cd7.marked).toBeTruthy();
-            expect(!!cd7.GetSibling(admin, ComponentB)).toBeTruthy();
+            expect(!!cd7.GetSibling(ComponentB)).toBeTruthy();
         } else {
             throw (new Error("system update err"));
         }
         const cd8 = admin.GetComponentByEntity(e8, ComponentD);
         if (cd8) {
             expect(cd8.marked).toBeTruthy();
-            expect(!!cd8.GetSibling(admin, ComponentB)).toBeTruthy();
+            expect(!!cd8.GetSibling(ComponentB)).toBeTruthy();
         } else {
             throw (new Error("system update err"));
         }
+        admin.UpdateSystems(1);
+        admin.UpdateSystems(1);
+        admin.UpdateSystems(1);
+        admin.UpdateSystems(1);
     });
     it("fix coverage", () => {
         class TEST extends Component {
@@ -253,5 +270,13 @@ describe("ecs test", () => {
         admin.GetComponentByEntity(-1, TEST);
         admin.DeleteEntity(-1);
         admin.RemoveComponents(-1);
+
+        const e1 = admin.CreateEntity();
+        class NewCompt1 extends Component { }
+        admin.RemoveComponents(e1, NewCompt1);
+        admin.GetComponentSize(NewCompt1);
+        expect(() => {
+            System.Update(admin, 1);
+        }).toThrowError(/^ECS-ERROR:/);
     });
 });

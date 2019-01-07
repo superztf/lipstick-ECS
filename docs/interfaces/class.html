@@ -3,7 +3,7 @@
 <head>
 	<meta charset="utf-8">
 	<meta http-equiv="X-UA-Compatible" content="IE=edge">
-	<title>System | lipstick-ECS</title>
+	<title>CLASS | lipstick-ECS</title>
 	<meta name="description" content="">
 	<meta name="viewport" content="width=device-width, initial-scale=1">
 	<link rel="stylesheet" href="../assets/css/main.css">
@@ -54,10 +54,10 @@
 					<a href="../globals.html">Globals</a>
 				</li>
 				<li>
-					<a href="system.html">System</a>
+					<a href="class.html">CLASS</a>
 				</li>
 			</ul>
-			<h1>Class System</h1>
+			<h1>Interface CLASS&lt;T&gt;</h1>
 		</div>
 	</div>
 </header>
@@ -67,25 +67,33 @@
 			<section class="tsd-panel tsd-comment">
 				<div class="tsd-comment tsd-typography">
 					<div class="lead">
-						<p>Base class for all Systems to inherit from. And you should implement the static method System.Update().(System will not be instantiated.)
-						Each System do not know what entity is and do not care about entity, they just do something with Component sets.</p>
+						<p>Component class type.</p>
 					</div>
 					<dl class="tsd-comment-tags">
 						<dt>export</dt>
 						<dd></dd>
-						<dt>abstract</dt>
-						<dd></dd>
-						<dt>class</dt>
-						<dd><p>System</p>
+						<dt>interface</dt>
+						<dd><p>CLASS</p>
+						</dd>
+						<dt>template</dt>
+						<dd><p>T</p>
 						</dd>
 					</dl>
 				</div>
+			</section>
+			<section class="tsd-panel tsd-type-parameters">
+				<h3>Type parameters</h3>
+				<ul class="tsd-type-parameters">
+					<li>
+						<h4>T</h4>
+					</li>
+				</ul>
 			</section>
 			<section class="tsd-panel tsd-hierarchy">
 				<h3>Hierarchy</h3>
 				<ul class="tsd-hierarchy">
 					<li>
-						<span class="target">System</span>
+						<span class="target">CLASS</span>
 					</li>
 				</ul>
 			</section>
@@ -94,53 +102,57 @@
 				<section class="tsd-panel tsd-index-panel">
 					<div class="tsd-index-content">
 						<section class="tsd-index-section tsd-is-external">
-							<h3>Methods</h3>
+							<h3>Constructors</h3>
 							<ul class="tsd-index-list">
-								<li class="tsd-kind-method tsd-parent-kind-class tsd-is-static tsd-is-external"><a href="system.html#update" class="tsd-kind-icon">Update</a></li>
+								<li class="tsd-kind-constructor tsd-parent-kind-interface tsd-is-external"><a href="class.html#constructor" class="tsd-kind-icon">constructor</a></li>
+							</ul>
+						</section>
+						<section class="tsd-index-section tsd-is-external">
+							<h3>Properties</h3>
+							<ul class="tsd-index-list">
+								<li class="tsd-kind-property tsd-parent-kind-interface tsd-is-external"><a href="class.html#id" class="tsd-kind-icon">id</a></li>
 							</ul>
 						</section>
 					</div>
 				</section>
 			</section>
 			<section class="tsd-panel-group tsd-member-group tsd-is-external">
-				<h2>Methods</h2>
-				<section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class tsd-is-static tsd-is-external">
-					<a name="update" class="tsd-anchor"></a>
-					<h3><span class="tsd-flag ts-flagStatic">Static</span> Update</h3>
-					<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class tsd-is-static tsd-is-external">
-						<li class="tsd-signature tsd-kind-icon">Update<span class="tsd-signature-symbol">(</span>admin<span class="tsd-signature-symbol">: </span><a href="entityadmin.html" class="tsd-signature-type">EntityAdmin</a>, timeDelta<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">number</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">void</span></li>
+				<h2>Constructors</h2>
+				<section class="tsd-panel tsd-member tsd-kind-constructor tsd-parent-kind-interface tsd-is-external">
+					<a name="constructor" class="tsd-anchor"></a>
+					<h3>constructor</h3>
+					<ul class="tsd-signatures tsd-kind-constructor tsd-parent-kind-interface tsd-is-external">
+						<li class="tsd-signature tsd-kind-icon">new CLASS<span class="tsd-signature-symbol">(</span><span class="tsd-signature-symbol">...</span>p<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">any</span><span class="tsd-signature-symbol">[]</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">T</span></li>
 					</ul>
 					<ul class="tsd-descriptions">
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/superztf/lipstick-ECS/blob/1454b9b/src/system.ts#L22">system.ts:22</a></li>
+									<li>Defined in <a href="https://github.com/superztf/lipstick-ECS/blob/1454b9b/src/utils.ts#L16">utils.ts:16</a></li>
 								</ul>
 							</aside>
-							<div class="tsd-comment tsd-typography">
-								<div class="lead">
-									<p>EntityAdmin.UpdateSystems() will call this method in each frame.</p>
-								</div>
-								<dl class="tsd-comment-tags">
-									<dt>static</dt>
-									<dd></dd>
-									<dt>memberof</dt>
-									<dd><p>System</p>
-									</dd>
-								</dl>
-							</div>
 							<h4 class="tsd-parameters-title">Parameters</h4>
 							<ul class="tsd-parameters">
 								<li>
-									<h5>admin: <a href="entityadmin.html" class="tsd-signature-type">EntityAdmin</a></h5>
-								</li>
-								<li>
-									<h5>timeDelta: <span class="tsd-signature-type">number</span></h5>
+									<h5><span class="tsd-flag ts-flagRest">Rest</span> <span class="tsd-signature-symbol">...</span>p: <span class="tsd-signature-type">any</span><span class="tsd-signature-symbol">[]</span></h5>
 								</li>
 							</ul>
-							<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">void</span></h4>
+							<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">T</span></h4>
 						</li>
 					</ul>
+				</section>
+			</section>
+			<section class="tsd-panel-group tsd-member-group tsd-is-external">
+				<h2>Properties</h2>
+				<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-interface tsd-is-external">
+					<a name="id" class="tsd-anchor"></a>
+					<h3>id</h3>
+					<div class="tsd-signature tsd-kind-icon">id<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">number</span></div>
+					<aside class="tsd-sources">
+						<ul>
+							<li>Defined in <a href="https://github.com/superztf/lipstick-ECS/blob/1454b9b/src/utils.ts#L16">utils.ts:16</a></li>
+						</ul>
+					</aside>
 				</section>
 			</section>
 		</div>
@@ -155,31 +167,34 @@
 			<nav class="tsd-navigation secondary menu-sticky">
 				<ul class="before-current">
 					<li class=" tsd-kind-class tsd-is-external">
-						<a href="component.html" class="tsd-kind-icon">Component</a>
+						<a href="../classes/component.html" class="tsd-kind-icon">Component</a>
 					</li>
 					<li class=" tsd-kind-class tsd-is-external">
-						<a href="entityadmin.html" class="tsd-kind-icon">Entity<wbr>Admin</a>
+						<a href="../classes/entityadmin.html" class="tsd-kind-icon">Entity<wbr>Admin</a>
+					</li>
+					<li class=" tsd-kind-class tsd-is-external">
+						<a href="../classes/system.html" class="tsd-kind-icon">System</a>
 					</li>
 				</ul>
 				<ul class="current">
-					<li class="current tsd-kind-class tsd-is-external">
-						<a href="system.html" class="tsd-kind-icon">System</a>
+					<li class="current tsd-kind-interface tsd-has-type-parameter tsd-is-external">
+						<a href="class.html" class="tsd-kind-icon">CLASS</a>
 						<ul>
-							<li class=" tsd-kind-method tsd-parent-kind-class tsd-is-static tsd-is-external">
-								<a href="system.html#update" class="tsd-kind-icon">Update</a>
+							<li class=" tsd-kind-constructor tsd-parent-kind-interface tsd-is-external">
+								<a href="class.html#constructor" class="tsd-kind-icon">constructor</a>
+							</li>
+							<li class=" tsd-kind-property tsd-parent-kind-interface tsd-is-external">
+								<a href="class.html#id" class="tsd-kind-icon">id</a>
 							</li>
 						</ul>
 					</li>
 				</ul>
 				<ul class="after-current">
-					<li class=" tsd-kind-interface tsd-has-type-parameter tsd-is-external">
-						<a href="../interfaces/class.html" class="tsd-kind-icon">CLASS</a>
+					<li class=" tsd-kind-interface tsd-is-external">
+						<a href="ifilter.html" class="tsd-kind-icon">IFilter</a>
 					</li>
 					<li class=" tsd-kind-interface tsd-is-external">
-						<a href="../interfaces/ifilter.html" class="tsd-kind-icon">IFilter</a>
-					</li>
-					<li class=" tsd-kind-interface tsd-is-external">
-						<a href="../interfaces/ifilterid.html" class="tsd-kind-icon">IFilterID</a>
+						<a href="ifilterid.html" class="tsd-kind-icon">IFilterID</a>
 					</li>
 					<li class=" tsd-kind-type-alias tsd-is-external">
 						<a href="../globals.html#componenttype" class="tsd-kind-icon">Component<wbr>Type</a>

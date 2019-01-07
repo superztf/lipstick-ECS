@@ -1,7 +1,7 @@
 import { Component } from "./component";
 import { EntityAdmin, Entity } from "./EntityAdmin";
 import { System } from "./system";
-import { present } from "./utils";
+import { present, IFilter } from "./utils";
 
 export {
     Component,
@@ -9,4 +9,5 @@ export {
     Entity,
     System,
     present,
+    IFilter,
 };

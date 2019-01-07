@@ -74,15 +74,26 @@
 							</ul>
 						</section>
 						<section class="tsd-index-section tsd-is-external">
+							<h3>Interfaces</h3>
+							<ul class="tsd-index-list">
+								<li class="tsd-kind-interface tsd-has-type-parameter tsd-is-external"><a href="interfaces/class.html" class="tsd-kind-icon">CLASS</a></li>
+								<li class="tsd-kind-interface tsd-is-external"><a href="interfaces/ifilter.html" class="tsd-kind-icon">IFilter</a></li>
+								<li class="tsd-kind-interface tsd-is-external"><a href="interfaces/ifilterid.html" class="tsd-kind-icon">IFilterID</a></li>
+							</ul>
+						</section>
+						<section class="tsd-index-section tsd-is-external">
 							<h3>Type aliases</h3>
 							<ul class="tsd-index-list">
-								<li class="tsd-kind-type-alias tsd-has-type-parameter tsd-is-external"><a href="globals.html#class" class="tsd-kind-icon">CLASS</a></li>
+								<li class="tsd-kind-type-alias tsd-is-external"><a href="globals.html#componenttype" class="tsd-kind-icon">Component<wbr>Type</a></li>
 								<li class="tsd-kind-type-alias tsd-is-external"><a href="globals.html#entity" class="tsd-kind-icon">Entity</a></li>
+								<li class="tsd-kind-type-alias tsd-is-external"><a href="globals.html#systemtype" class="tsd-kind-icon">System<wbr>Type</a></li>
 							</ul>
 						</section>
 						<section class="tsd-index-section tsd-is-external">
 							<h3>Functions</h3>
 							<ul class="tsd-index-list">
+								<li class="tsd-kind-function tsd-is-external"><a href="globals.html#checkfilter" class="tsd-kind-icon">Check<wbr>Filter</a></li>
+								<li class="tsd-kind-function tsd-is-external"><a href="globals.html#filtercomponents" class="tsd-kind-icon">Filter<wbr>Components</a></li>
 								<li class="tsd-kind-function tsd-is-external"><a href="globals.html#present" class="tsd-kind-icon">present</a></li>
 								<li class="tsd-kind-function tsd-is-external"><a href="globals.html#throwerror" class="tsd-kind-icon">throw<wbr>Error</a></li>
 							</ul>
@@ -92,20 +103,15 @@
 			</section>
 			<section class="tsd-panel-group tsd-member-group tsd-is-external">
 				<h2>Type aliases</h2>
-				<section class="tsd-panel tsd-member tsd-kind-type-alias tsd-has-type-parameter tsd-is-external">
-					<a name="class" class="tsd-anchor"></a>
-					<h3>CLASS</h3>
-					<div class="tsd-signature tsd-kind-icon">CLASS<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">object</span></div>
+				<section class="tsd-panel tsd-member tsd-kind-type-alias tsd-is-external">
+					<a name="componenttype" class="tsd-anchor"></a>
+					<h3>Component<wbr>Type</h3>
+					<div class="tsd-signature tsd-kind-icon">Component<wbr>Type<span class="tsd-signature-symbol">:</span> <a href="classes/component.html" class="tsd-signature-type">Component</a></div>
 					<aside class="tsd-sources">
 						<ul>
-							<li>Defined in <a href="https://github.com/superztf/lipstick-ECS/blob/0df6d26/src/utils.ts#L1">utils.ts:1</a></li>
+							<li>Defined in <a href="https://github.com/superztf/lipstick-ECS/blob/1454b9b/src/utils.ts#L4">utils.ts:4</a></li>
 						</ul>
 					</aside>
-					<div class="tsd-type-declaration">
-						<h4>Type declaration</h4>
-						<ul class="tsd-parameters">
-						</ul>
-					</div>
 				</section>
 				<section class="tsd-panel tsd-member tsd-kind-type-alias tsd-is-external">
 					<a name="entity" class="tsd-anchor"></a>
@@ -113,13 +119,69 @@
 					<div class="tsd-signature tsd-kind-icon">Entity<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">number</span></div>
 					<aside class="tsd-sources">
 						<ul>
-							<li>Defined in <a href="https://github.com/superztf/lipstick-ECS/blob/0df6d26/src/EntityAdmin.ts#L5">EntityAdmin.ts:5</a></li>
+							<li>Defined in <a href="https://github.com/superztf/lipstick-ECS/blob/1454b9b/src/EntityAdmin.ts#L6">EntityAdmin.ts:6</a></li>
+						</ul>
+					</aside>
+				</section>
+				<section class="tsd-panel tsd-member tsd-kind-type-alias tsd-is-external">
+					<a name="systemtype" class="tsd-anchor"></a>
+					<h3>System<wbr>Type</h3>
+					<div class="tsd-signature tsd-kind-icon">System<wbr>Type<span class="tsd-signature-symbol">:</span> <a href="classes/system.html" class="tsd-signature-type">System</a></div>
+					<aside class="tsd-sources">
+						<ul>
+							<li>Defined in <a href="https://github.com/superztf/lipstick-ECS/blob/1454b9b/src/utils.ts#L5">utils.ts:5</a></li>
 						</ul>
 					</aside>
 				</section>
 			</section>
 			<section class="tsd-panel-group tsd-member-group tsd-is-external">
 				<h2>Functions</h2>
+				<section class="tsd-panel tsd-member tsd-kind-function tsd-is-external">
+					<a name="checkfilter" class="tsd-anchor"></a>
+					<h3>Check<wbr>Filter</h3>
+					<ul class="tsd-signatures tsd-kind-function tsd-is-external">
+						<li class="tsd-signature tsd-kind-icon">Check<wbr>Filter<span class="tsd-signature-symbol">(</span>f<span class="tsd-signature-symbol">: </span><a href="interfaces/ifilter.html" class="tsd-signature-type">IFilter</a><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">void</span></li>
+					</ul>
+					<ul class="tsd-descriptions">
+						<li class="tsd-description">
+							<aside class="tsd-sources">
+								<ul>
+									<li>Defined in <a href="https://github.com/superztf/lipstick-ECS/blob/1454b9b/src/_filter.ts#L31">_filter.ts:31</a></li>
+								</ul>
+							</aside>
+							<h4 class="tsd-parameters-title">Parameters</h4>
+							<ul class="tsd-parameters">
+								<li>
+									<h5>f: <a href="interfaces/ifilter.html" class="tsd-signature-type">IFilter</a></h5>
+								</li>
+							</ul>
+							<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">void</span></h4>
+						</li>
+					</ul>
+				</section>
+				<section class="tsd-panel tsd-member tsd-kind-function tsd-is-external">
+					<a name="filtercomponents" class="tsd-anchor"></a>
+					<h3>Filter<wbr>Components</h3>
+					<ul class="tsd-signatures tsd-kind-function tsd-is-external">
+						<li class="tsd-signature tsd-kind-icon">Filter<wbr>Components<span class="tsd-signature-symbol">(</span>filter<span class="tsd-signature-symbol">: </span><a href="interfaces/ifilter.html" class="tsd-signature-type">IFilter</a><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><a href="globals.html#componenttype" class="tsd-signature-type">ComponentType</a><span class="tsd-signature-symbol">[]</span></li>
+					</ul>
+					<ul class="tsd-descriptions">
+						<li class="tsd-description">
+							<aside class="tsd-sources">
+								<ul>
+									<li>Defined in <a href="https://github.com/superztf/lipstick-ECS/blob/1454b9b/src/_filter.ts#L11">_filter.ts:11</a></li>
+								</ul>
+							</aside>
+							<h4 class="tsd-parameters-title">Parameters</h4>
+							<ul class="tsd-parameters">
+								<li>
+									<h5>filter: <a href="interfaces/ifilter.html" class="tsd-signature-type">IFilter</a></h5>
+								</li>
+							</ul>
+							<h4 class="tsd-returns-title">Returns <a href="globals.html#componenttype" class="tsd-signature-type">ComponentType</a><span class="tsd-signature-symbol">[]</span></h4>
+						</li>
+					</ul>
+				</section>
 				<section class="tsd-panel tsd-member tsd-kind-function tsd-is-external">
 					<a name="present" class="tsd-anchor"></a>
 					<h3>present</h3>
@@ -130,7 +192,7 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/superztf/lipstick-ECS/blob/0df6d26/src/utils.ts#L11">utils.ts:11</a></li>
+									<li>Defined in <a href="https://github.com/superztf/lipstick-ECS/blob/1454b9b/src/utils.ts#L76">utils.ts:76</a></li>
 								</ul>
 							</aside>
 							<div class="tsd-comment tsd-typography">
@@ -158,7 +220,7 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/superztf/lipstick-ECS/blob/0df6d26/src/utils.ts#L20">utils.ts:20</a></li>
+									<li>Defined in <a href="https://github.com/superztf/lipstick-ECS/blob/1454b9b/src/_utils.ts#L1">_utils.ts:1</a></li>
 								</ul>
 							</aside>
 							<h4 class="tsd-parameters-title">Parameters</h4>
@@ -192,11 +254,29 @@
 					<li class=" tsd-kind-class tsd-is-external">
 						<a href="classes/system.html" class="tsd-kind-icon">System</a>
 					</li>
-					<li class=" tsd-kind-type-alias tsd-has-type-parameter tsd-is-external">
-						<a href="globals.html#class" class="tsd-kind-icon">CLASS</a>
+					<li class=" tsd-kind-interface tsd-has-type-parameter tsd-is-external">
+						<a href="interfaces/class.html" class="tsd-kind-icon">CLASS</a>
+					</li>
+					<li class=" tsd-kind-interface tsd-is-external">
+						<a href="interfaces/ifilter.html" class="tsd-kind-icon">IFilter</a>
+					</li>
+					<li class=" tsd-kind-interface tsd-is-external">
+						<a href="interfaces/ifilterid.html" class="tsd-kind-icon">IFilterID</a>
+					</li>
+					<li class=" tsd-kind-type-alias tsd-is-external">
+						<a href="globals.html#componenttype" class="tsd-kind-icon">Component<wbr>Type</a>
 					</li>
 					<li class=" tsd-kind-type-alias tsd-is-external">
 						<a href="globals.html#entity" class="tsd-kind-icon">Entity</a>
+					</li>
+					<li class=" tsd-kind-type-alias tsd-is-external">
+						<a href="globals.html#systemtype" class="tsd-kind-icon">System<wbr>Type</a>
+					</li>
+					<li class=" tsd-kind-function tsd-is-external">
+						<a href="globals.html#checkfilter" class="tsd-kind-icon">Check<wbr>Filter</a>
+					</li>
+					<li class=" tsd-kind-function tsd-is-external">
+						<a href="globals.html#filtercomponents" class="tsd-kind-icon">Filter<wbr>Components</a>
 					</li>
 					<li class=" tsd-kind-function tsd-is-external">
 						<a href="globals.html#present" class="tsd-kind-icon">present</a>

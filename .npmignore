@@ -12,3 +12,4 @@ coverage/
 docs/
 .vscode/
 typedoc.json
+lib/**/*.map
