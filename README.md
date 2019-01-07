@@ -18,8 +18,9 @@ $ npm install lipstick-ecs --save
 * [Source Code](https://github.com/superztf/lipstick-ECS/tree/watching_components)
 * [ECS Concept](https://en.wikipedia.org/wiki/Entity%E2%80%93component%E2%80%93system)
 * [Documentation](https://superztf.github.io/lipstick-ECS/globals.html)
-* [Example Code](https://github.com/superztf/ECS-example)
+* [See a real example](https://github.com/superztf/ECS-example)
 
+# Example Code
 ```typescript
 import { EntityAdmin, System, Component, IFilter } from "lipstick-ecs";
 
@@ -48,11 +49,11 @@ class HiddenDisplay extends Component { }
 const Match: IFilter = {
     all_of: [Position, Color, Shape],
     any_of: [PlayerID, PlayerName],
-    none_of: [HiddenDisplay]
+    none_of: [HiddenDisplay],
 };
 
 class MovementSystem extends System {
-     public static Update(admin: EntityAdmin, deltatime: number): void {
+    public static Update(admin: EntityAdmin, deltatime: number): void {
         for (const pos of admin.GetComponentsByTuple(Position, Velocity)) {
             const vel: Velocity = pos.SureSibling(Velocity);
             pos.x += vel.vx * deltatime;
@@ -64,9 +65,9 @@ class MovementSystem extends System {
 class RendererSystem extends System {
     public static Update(admin: EntityAdmin, deltatime: number): void {
         for (const ent of admin.GetEnttsByFilter(Match)) {
-            let pos: Position = admin.SureComponentByEntity(ent, Position);
-            let color: Color = admin.SureComponentByEntity(ent, Color);
-            let shape: Shape = admin.SureComponentByEntity(ent, Shape);
+            const pos: Position = admin.SureComponentByEntity(ent, Position);
+            const color: Color = admin.SureComponentByEntity(ent, Color);
+            const shape: Shape = admin.SureComponentByEntity(ent, Shape);
             if (admin.HasComponent(ent, HiddenDisplay)) {
                 console.log("won't print this message...");
             } else {
@@ -84,13 +85,13 @@ const admin = new EntityAdmin();
 admin.AddWatchings(Match);
 admin.start();
 
-
-admin.CreateEntity(new Position(22, 33));
-admin.CreateEntity(new PlayerID(), new PlayerName());
-let ent = admin.CreateEntity();
+admin.CreateEntity(new Position(22, 33), new Color(), new Shape(), new PlayerID());
+admin.CreateEntity(new PlayerID());
+const ent = admin.CreateEntity();
 admin.AssignComponents(ent, new Shape(), new Color());
 admin.DeleteEntity(ent);
 
 setInterval(() => { admin.UpdateSystems(); }, 200);
+
 
 ```
