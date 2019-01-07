@@ -1,7 +1,7 @@
 import { EntityAdmin } from "../src/EntityAdmin";
 import { Component } from "../src/component";
 import { System } from "../src/system";
-import { CLASS } from "../src/utils";
+import { SystemType } from "../src/utils";
 
 class ComponentA extends Component {
     public attr1 = 0;
@@ -143,7 +143,7 @@ describe("ecs test", () => {
         admin.AddSystem(SystemA, 2);
         admin.AddSystem(SystemA);
         let i = 3;
-        for (const s of (admin as any).systems as Array<{ priority: number, system: CLASS<System> }>) {
+        for (const s of (admin as any).systems as Array<{ priority: number, system: SystemType }>) {
             expect(s.priority).toBe(i);
             --i;
         }

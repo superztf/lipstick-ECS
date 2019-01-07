@@ -3,6 +3,14 @@ import { System } from "./system";
 
 export type ComponentType = typeof Component;
 export type SystemType = typeof System;
+
+/**
+ * Component class type.
+ *
+ * @export
+ * @interface CLASS
+ * @template T
+ */
 // tslint:disable-next-line:interface-name
 export interface CLASS<T> {
     id: number;
@@ -10,8 +18,44 @@ export interface CLASS<T> {
 }
 
 /**
+ * Combinations of components.
+ * Attention: EntityAdmin.AddWatchings() use IFilter object's reference to identify.
  *
+ * ```typescript
+ * // **************************************************************************************
+ * // The codes below cannot get expected results.(f1 and f2 is not from the same reference)
+ * // **************************************************************************************
+ * // module_a.ts
+ * const f1: IFilter = {
+ *  all_of: [ComponentA, ComponentB],
+ *   none_of: [ComponentC],
+ * };
+ * admin.AddWatchings(f1);
  *
+ * // module_b.ts
+ * const f2: IFilter = {
+ *  all_of: [ComponentA, ComponentB],
+ *  none_of: [ComponentC],
+ * };
+ * for(const ent of admin.GetEnttsByFilter(f2)) { }
+ *
+ * // **************************************
+ * // You can do this in the following ways.
+ * // **************************************
+ * // module_c.ts
+ * export const Match_1: IFilter = {
+ *  all_of: all_of: [ComponentA, ComponentB],
+ *  none_of: [ComponentC],
+ * };
+ *
+ * // module_a.ts
+ * import { Match_1 } from "./module_c";
+ * admin.AddWatchings(Match_1);
+ *
+ * // module_b.ts
+ * import { Match_1 } from "./module_c";
+ * for(const ent of admin.GetEnttsByFilter(Match_1)) { }
+ * ```
  * @export
  * @interface IFilter
  */

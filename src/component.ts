@@ -11,7 +11,7 @@ import { CLASS, ComponentType } from "./utils";
 export class Component {
 
     /**
-     * Returns owner entity ID. Before the component instance be assigned to an entity, it returns 0.
+     * Returns owner entity ID. Before the component instance be assigned to an entity, it returns 0 that is not a valid entity.
      *
      * @readonly
      * @type {Entity}
@@ -24,6 +24,15 @@ export class Component {
     protected get admin(): EntityAdmin {
         return this.m_admin as EntityAdmin;
     }
+
+    /**
+     * Don't modify or read this attribute! It's only used by EntityAdmin.
+     * If this component is being watched, EntityAdmin will apply an ID for the Component.id.
+     *
+     * @static
+     * @type {number}
+     * @memberof Component
+     */
     public static id: number = 0;
 
     /**
@@ -42,7 +51,6 @@ export class Component {
      * If the specified type component exist, returns it's instance. If not, returns undefined.
      *
      * @template T
-     * @param {EntityAdmin} admin
      * @param {CLASS<T>} cclass The specified component type.
      * @returns {(T | undefined)}
      * @memberof Component
@@ -56,7 +64,6 @@ export class Component {
      * If you are sure sibling component exist, call this method. The return type does not union undefined.
      *
      * @template T
-     * @param {EntityAdmin} admin
      * @param {CLASS<T>} cclass Component type.
      * @returns {T}
      * @memberof Component
@@ -68,7 +75,6 @@ export class Component {
     /**
      * Add one or more sibing components. If the owner entity has owned the component type you give, the new component instance will replace the old.
      *
-     * @param {EntityAdmin} admin
      * @param {...Component[]} cs A list of component instances.
      * @memberof Component
      */
@@ -80,7 +86,6 @@ export class Component {
      * Remove one or more sibing components.
      * Remove a component type that the owner entity doesn't own is allowed. So it's not necessary to determine whether the component type is owned before removing it.
      *
-     * @param {EntityAdmin} admin
      * @param {...Array<CLASS<Component>>} cs A list of component instances.
      * @memberof Component
      */
