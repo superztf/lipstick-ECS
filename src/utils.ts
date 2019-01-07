@@ -9,6 +9,12 @@ export interface CLASS<T> {
     new(...p: any[]): T;
 }
 
+/**
+ *
+ *
+ * @export
+ * @interface IFilter
+ */
 export interface IFilter {
     all_of?: [ComponentType, ...ComponentType[]];
     any_of?: [ComponentType, ...ComponentType[]];

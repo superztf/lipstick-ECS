@@ -30,32 +30,83 @@ export class EntityAdmin {
     protected entity_cidmap: Map<Entity, number> = new Map();
     protected tuple_cache: Map<number, Set<Component>> = new Map();
     protected tuple_dirty: Map<ComponentType, boolean> = new Map();
+    protected empty_set: Set<any> = new Set();
 
+    /**
+     * The default running state is false. This method set it true. EntityAdmin.UpdateSystems() can work only in running===true state.
+     *
+     * @param {number} [curtime=present()] A currrent time. If not given curtime, will use present().
+     * @memberof EntityAdmin
+     */
     public start(curtime: number = present()): void {
         this.lastupdate = curtime;
         this.running = true;
     }
 
+    /**
+     * Set running state false. In this state, EntityAdmin.UpdateSystems() do nothing.
+     *
+     * @memberof EntityAdmin
+     */
     public stop(): void {
         this.running = false;
     }
 
+    /**
+     * Set a public component.
+     * Public component is Singleton pattern. It used for sharing data between Systems, but not for assigning to entity.
+     *
+     * @param c A Component instance
+     */
     public SetPubComponent(c: Component) {
         this.pubcoms.set(c.constructor as ComponentType, c);
     }
 
+    /**
+     * Get a public component.
+     * See EntityAdmin.SetPubComponent().
+     *
+     * @template T
+     * @param {CLASS<T>} cclass A Component class
+     * @returns {(undefined | T)}
+     * @memberof EntityAdmin
+     */
     public GetPubComponent<T extends Component>(cclass: CLASS<T>): undefined | T {
         return this.pubcoms.get(cclass) as undefined | T;
     }
 
+    /**
+     * Actually the same as EntityAdmin.GetPubComponent(), but returns by a type assertion(not union undefined).
+     * If you are sure this type of component exist, call this method maybe better than EntityAdmin.GetPubComponent().
+     *
+     * @template T
+     * @param {CLASS<T>} cclass A Component class
+     * @returns {T}
+     * @memberof EntityAdmin
+     */
     public SurePubComponent<T extends Component>(cclass: CLASS<T>): T {
         return this.pubcoms.get(cclass) as T;
     }
 
+    /**
+     * Push a deferment item. The deferment items will be processed in queue order at the end of each frame and then be cleared out.
+     * One EntityAdmin.UpdateSystems() call is one frame.
+     *
+     * @param {Function} func your function to deal delayed things
+     * @param {...any} args parameter list for your function
+     * @memberof EntityAdmin
+     */
     public PushDeferment(func: Function, ...args: any) {
         this.deferments.push({ func, args });
     }
 
+    /**
+     * Add a System, generally be called before EntityAdmin.start().
+     *
+     * @param {SystemType} system A system class. This class will not be instantiated, but EntityAdmin will call the system's static method Update().
+     * @param {number} [priority=0] Bigger number means higher priority. Priority determines the order of updating systems.
+     * @memberof EntityAdmin
+     */
     public AddSystem(system: SystemType, priority: number = 0) {
         this.systems.push({ system, priority });
         this.systems.sort((a, b) => {
@@ -63,6 +114,13 @@ export class EntityAdmin {
         });
     }
 
+    /**
+     * Call all systems Update() method in order of their priority, and then deal deferment items you pushed before, at last clear deferment buffer.
+     * If the running state is false, it will do nothing.
+     *
+     * @param {number} [curtime] A currrent time. If not given curtime, will use present().
+     * @memberof EntityAdmin
+     */
     public UpdateSystems(curtime: number = present()) {
         if (this.running) {
             const delta = curtime - this.lastupdate;
@@ -77,6 +135,13 @@ export class EntityAdmin {
         }
     }
 
+    /**
+     * Create an entity. And optional for assigning a list of components at the same time.
+     *
+     * @param {...Component[]} args Component object list.
+     * @returns {Entity} Entity ID. It's a number actually.
+     * @memberof EntityAdmin
+     */
     public CreateEntity(...args: Component[]): Entity {
         const new_ent = ++this.next_entity;
         this.entities.set(new_ent, new Map());
@@ -86,6 +151,12 @@ export class EntityAdmin {
         return new_ent;
     }
 
+    /**
+     * Delete an entity. And the components the entity owns will be removed at the same time.
+     *
+     * @param {Entity} e Entity ID.
+     * @memberof EntityAdmin
+     */
     public DeleteEntity(e: Entity): void {
         const coms = this.entities.get(e);
         if (coms) {
@@ -104,12 +175,26 @@ export class EntityAdmin {
         }
     }
 
+    /**
+     * Delete all entities.
+     *
+     * @memberof EntityAdmin
+     */
     public ClearAllEntity() {
         for (const e of this.entities.keys()) {
             this.DeleteEntity(e);
         }
     }
 
+    /**
+     * Get an entity's component object.
+     *
+     * @template T
+     * @param {Entity} Entity Entity ID.
+     * @param {CLASS<T>} cclass A component class.
+     * @returns {(T | undefined)} The component instance or undefined if the entity doesn't own this type of component.
+     * @memberof EntityAdmin
+     */
     public GetComponentByEntity<T extends Component>(entity: Entity, cclass: CLASS<T>): T | undefined {
         const coms = this.entities.get(entity);
         if (coms) {
@@ -117,10 +202,24 @@ export class EntityAdmin {
         }
     }
 
+    /**
+     *  Identify an entity exist or not.
+     *
+     * @param {Entity} e Entity ID.
+     * @returns {boolean} Return true means the entity exist.
+     * @memberof EntityAdmin
+     */
     public ValidEntity(e: Entity): boolean {
         return this.entities.has(e);
     }
 
+    /**
+     * Assign component objects to an entity. If you assign the same type component object to an entity, the latter will replace the former.
+     *
+     * @param {Entity} e Entity ID.
+     * @param {...Component[]} cs Component object list.
+     * @memberof EntityAdmin
+     */
     public AssignComponents(e: Entity, ...cs: Component[]): void {
         const coms = this.entities.get(e);
         let effect_cnt = 0;
@@ -173,6 +272,14 @@ export class EntityAdmin {
         }
     }
 
+    /**
+     * Remove component objects from an entity.
+     * If the entity or components do not exist, this method just do nothing, won't throw error.
+     *
+     * @param {Entity} e Entity ID.
+     * @param {...ComponentType[]} cclass A list of component class.
+     * @memberof EntityAdmin
+     */
     public RemoveComponents(e: Entity, ...cclass: ComponentType[]) {
         const coms = this.entities.get(e);
         if (coms) {
@@ -219,6 +326,14 @@ export class EntityAdmin {
         }
     }
 
+    /**
+     * Determine whether the entity owns the specified type component or not.
+     *
+     * @param {Entity} e Entity ID.
+     * @param {ComponentType} c Component class.
+     * @returns {boolean} True means the type of component exist.
+     * @memberof EntityAdmin
+     */
     public HasComponent(e: Entity, c: ComponentType): boolean {
         const coms = this.entities.get(e);
         if (coms && coms.has(c)) {
@@ -227,15 +342,14 @@ export class EntityAdmin {
         return false;
     }
 
-    public GetComponents<T extends Component>(cclass: CLASS<T>): Set<T> {
-        const compts = this.comptcontain.get(cclass);
-        if (compts) {
-            return compts as Set<T>;
-        } else {
-            return new Set();
-        }
-    }
-
+    /**
+     * Returns the number of entities that have the given components.
+     * If you want to get the number of entities that match more complex combinations of components, see MatchCountByFilter().
+     *
+     * @param {ComponentType} cclass Component class.
+     * @returns {number}
+     * @memberof EntityAdmin
+     */
     public GetComponentSize(cclass: ComponentType): number {
         const compts = this.comptcontain.get(cclass);
         if (compts) {
@@ -245,13 +359,48 @@ export class EntityAdmin {
         }
     }
 
-    public GetComponentsByTuple<T extends Component>(...cclass: [CLASS<T>, ...ComponentType[]]): Set<Component> {
+    /**
+     * Returns the iterator of components by your specified class.
+     *
+     * @template T
+     * @param {CLASS<T>} cclass Component class.
+     * @returns {IterableIterator<T>} Iterator of component.
+     * @memberof EntityAdmin
+     */
+    public GetComponents<T extends Component>(cclass: CLASS<T>): IterableIterator<T> {
+        const compts = this.comptcontain.get(cclass);
+        if (compts) {
+            return compts.values() as IterableIterator<T>;
+        } else {
+            return this.empty_set.values();
+        }
+    }
+
+    /**
+     * Returns the iterator of components by the first type you give. In this case, you can use EntityAdmin.SureSibling() to get other type components.
+     * Example:
+     * ```typescript
+     * for (const a of admin.GetComponentsByTuple(ComponentA, ComponentB, ComponentC)) {
+     *     // In this case, ComponentB and ComponentC must exist in a's owner entity. The a,b,c have the same owner entity.
+     *     const b: ComponentB = a.SureSibling(admin, ComponentB);
+     *     const c: ComponentC = a.SureSibling(admin, ComponentC);
+     *     // Can't confirm whether ComponentD exists.
+     *     const d: ComponentD | undefined = a.GetSibling(ComponentD);
+     * }
+     * ```
+     *
+     * @template T
+     * @param {...[CLASS<T>, ...ComponentType[]]} cclass A list of component class.
+     * @returns {IterableIterator<T>} The set of T component instances.
+     * @memberof EntityAdmin
+     */
+    public GetComponentsByTuple<T extends Component>(...cclass: [CLASS<T>, ...ComponentType[]]): IterableIterator<T> {
         if (cclass.length <= 1) {
             return this.GetComponents(cclass[0]);
         }
         const cache = this.tryGetTupleCache(cclass);
         if (cache) {
-            return cache;
+            return cache.values() as IterableIterator<T>;
         }
         interface ICInfo { type: CLASS<Component>; len: number; }
         const top = cclass[0];
@@ -259,7 +408,7 @@ export class EntityAdmin {
         for (const c of cclass) {
             const set = this.comptowners.get(c);
             if (!set) {
-                return new Set();
+                return this.empty_set.values();
             }
             length_info.push({ type: c, len: set.size });
         }
@@ -281,9 +430,17 @@ export class EntityAdmin {
             }
         }
         this.updateTupleCache(cclass, list);
-        return list;
+        return list.values();
     }
 
+    /**
+     * Sometimes it may be necessary to traverse entities with some complex conditions.
+     * For example, you might want to traverse entities that have components A, B, C, but no components D, E, and have any one of G, F components.
+     * Lipstick-ecs provides the ability to traverse complex component combinations. Before this, should call the method AddWatchings() to specify the component combinations.
+     *
+     * @param {...[IFilter, ...IFilter[]]} fts List of filters.
+     * @memberof EntityAdmin
+     */
     public AddWatchings(...fts: [IFilter, ...IFilter[]]) {
         if (this.entities.size > 0) {
             throwError("AddWatching should be used before CreateEntity");
@@ -329,20 +486,46 @@ export class EntityAdmin {
         }
     }
 
-    public GetComponentByIndex<T extends Component>(entity: Entity, cclass: CLASS<T>): T {
+    /**
+     * Actually the same as EntityAdmin.GetComponentByEntity(), but returns by a type assertion(not union undefined).
+     * It is used when you are sure the entity has the component.
+     *
+     * @template T
+     * @param {Entity} entity Entity ID.
+     * @param {CLASS<T>} cclass Component class.
+     * @returns {T}
+     * @memberof EntityAdmin
+     */
+    public SureComponentByEntity<T extends Component>(entity: Entity, cclass: CLASS<T>): T {
         const coms = this.entities.get(entity);
         return (coms as Map<ComponentType, Component>).get(cclass) as T;
     }
 
-    public GetIndexsByFilter(f: IFilter): Set<Entity> {
+    /**
+     * Returns the iterator of entities by your given IFilter.
+     * Attention: The filter you given should be specified by EntityAdmin.AddWatchings() before.
+     *
+     * @param {IFilter} f Component combinations.
+     * @returns {IterableIterator<Entity>} Iterator of entities.
+     * @memberof EntityAdmin
+     */
+    public GetEnttsByFilter(f: IFilter): IterableIterator<Entity> {
         const set = this.watch_ents.get(f);
         if (set) {
-            return set;
+            return set.values();
         } else {
-            return new Set();
+            return this.empty_set.values();
         }
     }
 
+    /**
+     * Returns the number of entities the filter matched.
+     * Attention: The filter you given should be specified by EntityAdmin.AddWatchings() before.
+     *
+     * @param {IFilter} f Component combinations.
+     * @returns {number}
+     * @memberof EntityAdmin
+     */
     public MatchCountByFilter(f: IFilter): number {
         const set = this.watch_ents.get(f);
         if (set) {
@@ -351,7 +534,7 @@ export class EntityAdmin {
         return 0;
     }
 
-    public matchFilter(e: Entity, fobj: IFilter): boolean {
+    protected matchFilter(e: Entity, fobj: IFilter): boolean {
         const entity_cid = this.entity_cidmap.get(e) as number;
         const fid = this.watch_fid.get(fobj) as IFilterID;
 

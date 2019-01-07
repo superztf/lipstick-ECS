@@ -11,14 +11,12 @@ describe("performance test", () => {
     admin.AddWatchings(Match_1, Match_2, Match_3, Match_4, Match_5, Match_6, Match_7);
     it("run one frame", () => {
         const st = present();
-        //
         for (let i = 0; i < NUM; ++i) {
             admin.CreateEntity();
         }
         const mark1 = present();
         output.push(`Create entities\t\t\t${(mark1 - st).toFixed(3)}ms\n`);
 
-        //
         for (let i = 1; i < NUM * 3 / 10 + 1; ++i) {
             admin.AssignComponents(i, new SimpleComptA());
             admin.AssignComponents(i, new SimpleComptB(), new SimpleComptC());
@@ -34,10 +32,10 @@ describe("performance test", () => {
         output.push(`Assign components\t\t\t${(mark2 - mark1).toFixed(3)}ms\n`);
 
         for (let i = 0; i < 100; ++i) {
-            for (const e of admin.GetIndexsByFilter(Match_5)) { // Match_5
-                const compt_a = admin.GetComponentByIndex(e, SimpleComptA);
-                const compt_b = admin.GetComponentByIndex(e, SimpleComptB);
-                const compt_c = admin.GetComponentByIndex(e, SimpleComptC);
+            for (const e of admin.GetEnttsByFilter(Match_5)) {
+                const compt_a = admin.SureComponentByEntity(e, SimpleComptA);
+                const compt_b = admin.SureComponentByEntity(e, SimpleComptB);
+                const compt_c = admin.SureComponentByEntity(e, SimpleComptC);
             }
         }
         const mark3 = present();

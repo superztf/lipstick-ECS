@@ -68,22 +68,11 @@ describe("test watch funtion", () => {
         expect(admin.MatchCountByFilter(new_match_7)).toBe(0);
 
     });
-    it("FilterMatch", () => {
-        const e = admin.CreateEntity(new SimpleComptA(), new SimpleComptB(), new SimpleComptC(), new SimpleComptD());
-        expect(admin.matchFilter(e, Match_1)).toBeTruthy();
-        expect(admin.matchFilter(e, Match_2)).toBeFalsy();
-        expect(admin.matchFilter(e, Match_3)).toBeTruthy();
-        expect(admin.matchFilter(e, Match_4)).toBeTruthy();
-        expect(admin.matchFilter(e, Match_5)).toBeFalsy();
-        expect(admin.matchFilter(e, Match_6)).toBeFalsy();
-        expect(admin.matchFilter(e, Match_7)).toBeTruthy();
-        admin.ClearAllEntity();
-    });
-    it("GetIndexsByFilter", () => {
+    it("GetEnttsByFilter", () => {
         admin.ClearAllEntity();
         function get_ents(f: IFilter) {
             const list = [];
-            for (const ent of admin.GetIndexsByFilter(f)) {
+            for (const ent of admin.GetEnttsByFilter(f)) {
                 list.push(ent);
             }
             list.sort();
@@ -92,7 +81,7 @@ describe("test watch funtion", () => {
 
         function has_compts(e: Entity, ...cclass: Array<CLASS<Component>>) {
             for (const c of cclass) {
-                if (!admin.GetComponentByIndex(e, c)) {
+                if (!admin.SureComponentByEntity(e, c)) {
                     return false;
                 }
             }
@@ -101,7 +90,7 @@ describe("test watch funtion", () => {
 
         function has_not_compts(e: Entity, ...cclass: Array<CLASS<Component>>) {
             for (const c of cclass) {
-                if (admin.GetComponentByIndex(e, c)) {
+                if (admin.SureComponentByEntity(e, c)) {
                     return false;
                 }
             }
@@ -210,7 +199,7 @@ describe("test watch funtion", () => {
     });
     it("fix coverage", () => {
         const new_match: IFilter = { all_of: [SimpleComptA, SimpleComptB] };
-        for (const x of admin.GetIndexsByFilter(new_match)) {
+        for (const x of admin.GetEnttsByFilter(new_match)) {
             throw (new Error());
         }
         admin.ClearAllEntity();
