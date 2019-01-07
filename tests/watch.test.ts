@@ -3,47 +3,8 @@ import { SimpleComptA, SimpleComptB, SimpleComptC, SimpleComptD, SimpleComptE, S
 import { Match_1, Match_2, Match_3, Match_4, Match_5, Match_6, Match_7 } from "./filters";
 import { IFilter, CLASS } from "../src/utils";
 import { Component } from "../src/component";
-function RandomInt(min = 5, max = 50) {
-    return Math.round(Math.random() * (max - min) + min);
-}
-
-function RunTimes(n: number, f: Function) {
-    for (let i = 0; i < n; ++i) {
-        f();
-    }
-}
 
 const admin = new EntityAdmin();
-
-function make() {
-    RunTimes(RandomInt(), () => {
-        admin.CreateEntity(new SimpleComptA(), new SimpleComptB(), new SimpleComptC());
-    });
-    RunTimes(RandomInt(), () => {
-        admin.CreateEntity(new SimpleComptA(), new SimpleComptC());
-    });
-    RunTimes(RandomInt(), () => {
-        admin.CreateEntity(new SimpleComptF());
-    });
-    RunTimes(RandomInt(), () => {
-        admin.CreateEntity(new SimpleComptA(), new SimpleComptB(), new SimpleComptC(), new SimpleComptD());
-    });
-    RunTimes(RandomInt(), () => {
-        admin.CreateEntity(new SimpleComptA(), new SimpleComptB(), new SimpleComptC(), new SimpleComptE());
-    });
-    RunTimes(RandomInt(), () => {
-        admin.CreateEntity(new SimpleComptA(), new SimpleComptB(), new SimpleComptC(), new SimpleComptF());
-    });
-    RunTimes(RandomInt(), () => {
-        admin.CreateEntity(new SimpleComptA(), new SimpleComptD());
-    });
-    RunTimes(RandomInt(), () => {
-        admin.CreateEntity(new SimpleComptB(), new SimpleComptE());
-    });
-    RunTimes(RandomInt(), () => {
-        admin.CreateEntity(new SimpleComptA(), new SimpleComptB(), new SimpleComptC(), new SimpleComptE(), new SimpleComptF());
-    });
-}
 
 describe("test watch funtion", () => {
 

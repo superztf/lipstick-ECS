@@ -17,6 +17,80 @@ $ npm install lipstick-ecs --save
 
 * [Source Code](https://github.com/superztf/lipstick-ECS/tree/watching_components)
 * [ECS Concept](https://en.wikipedia.org/wiki/Entity%E2%80%93component%E2%80%93system)
-* [Documentation v0.1.4](https://superztf.github.io/lipstick-ECS/globals.html)
-* [Example Code v0.1.4](https://github.com/superztf/ECS-example)
+* [Documentation](https://superztf.github.io/lipstick-ECS/globals.html)
+* [Example Code](https://github.com/superztf/ECS-example)
 
+```typescript
+import { EntityAdmin, System, Component, IFilter } from "lipstick-ecs";
+
+class Position extends Component {
+    public x: number;
+    public y: number;
+
+    constructor(x: number, y: number) {
+        super();
+        this.x = x;
+        this.y = y;
+    }
+}
+
+class Velocity extends Component {
+    public vx: number = 0;
+    public vy: number = 0;
+}
+
+class Color extends Component { }
+class Shape extends Component { }
+class PlayerID extends Component { }
+class PlayerName extends Component { }
+class HiddenDisplay extends Component { }
+
+const Match: IFilter = {
+    all_of: [Position, Color, Shape],
+    any_of: [PlayerID, PlayerName],
+    none_of: [HiddenDisplay]
+};
+
+class MovementSystem extends System {
+     public static Update(admin: EntityAdmin, deltatime: number): void {
+        for (const pos of admin.GetComponentsByTuple(Position, Velocity)) {
+            const vel: Velocity = pos.SureSibling(Velocity);
+            pos.x += vel.vx * deltatime;
+            pos.y += vel.vy * deltatime;
+        }
+    }
+}
+
+class RendererSystem extends System {
+    public static Update(admin: EntityAdmin, deltatime: number): void {
+        for (const ent of admin.GetEnttsByFilter(Match)) {
+            let pos: Position = admin.SureComponentByEntity(ent, Position);
+            let color: Color = admin.SureComponentByEntity(ent, Color);
+            let shape: Shape = admin.SureComponentByEntity(ent, Shape);
+            if (admin.HasComponent(ent, HiddenDisplay)) {
+                console.log("won't print this message...");
+            } else {
+                console.log("yes, the entity has not HiddenDisplay components.");
+            }
+            // do something for RendererSystem ...
+            if (pos.x > 6) {
+                // ...
+            }
+        }
+    }
+}
+
+const admin = new EntityAdmin();
+admin.AddWatchings(Match);
+admin.start();
+
+
+admin.CreateEntity(new Position(22, 33));
+admin.CreateEntity(new PlayerID(), new PlayerName());
+let ent = admin.CreateEntity();
+admin.AssignComponents(ent, new Shape(), new Color());
+admin.DeleteEntity(ent);
+
+setInterval(() => { admin.UpdateSystems(); }, 200);
+
+```
