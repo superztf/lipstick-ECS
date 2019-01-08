@@ -19,6 +19,7 @@ export interface CLASS<T> {
 
 /**
  * Combinations of components.
+ *
  * Attention: EntityAdmin.AddWatchings() use IFilter object's reference to identify.
  *
  * ```typescript

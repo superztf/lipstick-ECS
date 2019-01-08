@@ -391,7 +391,7 @@ export class EntityAdmin {
      *
      * @template T
      * @param {...[CLASS<T>, ...ComponentType[]]} cclass A list of component class.
-     * @returns {IterableIterator<T>} The set of T component instances.
+     * @returns {IterableIterator<T>} The iterator of T component instances.
      * @memberof EntityAdmin
      */
     public GetComponentsByTuple<T extends Component>(...cclass: [CLASS<T>, ...ComponentType[]]): IterableIterator<T> {
@@ -503,6 +503,7 @@ export class EntityAdmin {
 
     /**
      * Returns the iterator of entities by your given IFilter.
+     *
      * Attention: The filter you given should be specified by EntityAdmin.AddWatchings() before.
      *
      * @param {IFilter} f Component combinations.
@@ -520,6 +521,7 @@ export class EntityAdmin {
 
     /**
      * Returns the number of entities the filter matched.
+     *
      * Attention: The filter you given should be specified by EntityAdmin.AddWatchings() before.
      *
      * @param {IFilter} f Component combinations.

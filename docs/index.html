@@ -70,15 +70,96 @@
 				<a href="https://codeclimate.com/github/superztf/lipstick-ECS"><img src="https://img.shields.io/codeclimate/maintainability-percentage/superztf/lipstick-ECS.svg" alt="maintainability"></a></p>
 				<h1 id="lipstick-ecs">lipstick-ECS</h1>
 				<pre><code class="language-bash">$ npm install lipstick-ecs --save</code></pre>
+				<h2 id="introduction">Introduction</h2>
+				<p>lipstick-ECS is a tiny ECS framework for js or ts especially. It is easy to use because of good generic constraints implemented by full use of <a href="http://www.typescriptlang.org/docs/handbook/generics.html">Generics of Typescript</a>.</p>
+				<p>I try to make it support iteration of complex component combinations and keep it performant as possible.
+				But there are still some unsatisfactory currently:</p>
 				<blockquote>
-					<p>This is a big change from 0.1.4 to ^0.2.0. And documentation for the ^0.2.0 version is not ready yet.</p>
+					<ul>
+						<li>If the number of entities exceeds 100k, it is better not to choose lipstick-ecs at present.</li>
+						<li>The most consumptive operation is assigning a being <a href="https://superztf.github.io/lipstick-ECS/classes/entityadmin.html#addwatchings">watched</a> component.</li>
+						<li>Assigning 22k being watched components takes 70ms.(10ms to create 22k component object)</li>
+						<li>Test in CPU: 3.40GHz Node: v10.11.0</li>
+					</ul>
 				</blockquote>
+				<h2 id="getting-started">Getting Started</h2>
 				<ul>
-					<li><a href="https://github.com/superztf/lipstick-ECS/tree/watching_components">Source Code</a></li>
 					<li><a href="https://en.wikipedia.org/wiki/Entity%E2%80%93component%E2%80%93system">ECS Concept</a></li>
-					<li><a href="https://superztf.github.io/lipstick-ECS/globals.html">Documentation v0.1.4</a></li>
-					<li><a href="https://github.com/superztf/ECS-example">Example Code v0.1.4</a></li>
+					<li><a href="https://superztf.github.io/lipstick-ECS/globals.html">Documentation</a></li>
+					<li><a href="https://github.com/superztf/ECS-example">See a real example</a></li>
 				</ul>
+				<h2 id="example-code">Example Code</h2>
+				<pre><code class="language-typescript"><span class="hljs-keyword">import</span> { EntityAdmin, System, Component, IFilter } <span class="hljs-keyword">from</span> <span class="hljs-string">"lipstick-ecs"</span>;
+
+<span class="hljs-keyword">class</span> Position <span class="hljs-keyword">extends</span> Component {
+    <span class="hljs-keyword">public</span> x: <span class="hljs-built_in">number</span>;
+    <span class="hljs-keyword">public</span> y: <span class="hljs-built_in">number</span>;
+
+    <span class="hljs-keyword">constructor</span>(<span class="hljs-params">x: <span class="hljs-built_in">number</span>, y: <span class="hljs-built_in">number</span></span>) {
+        <span class="hljs-keyword">super</span>();
+        <span class="hljs-keyword">this</span>.x = x;
+        <span class="hljs-keyword">this</span>.y = y;
+    }
+}
+
+<span class="hljs-keyword">class</span> Velocity <span class="hljs-keyword">extends</span> Component {
+    <span class="hljs-keyword">public</span> vx: <span class="hljs-built_in">number</span> = <span class="hljs-number">0</span>;
+    <span class="hljs-keyword">public</span> vy: <span class="hljs-built_in">number</span> = <span class="hljs-number">0</span>;
+}
+
+<span class="hljs-keyword">class</span> Color <span class="hljs-keyword">extends</span> Component { }
+<span class="hljs-keyword">class</span> Shape <span class="hljs-keyword">extends</span> Component { }
+<span class="hljs-keyword">class</span> PlayerID <span class="hljs-keyword">extends</span> Component { }
+<span class="hljs-keyword">class</span> PlayerName <span class="hljs-keyword">extends</span> Component { }
+<span class="hljs-keyword">class</span> HiddenDisplay <span class="hljs-keyword">extends</span> Component { }
+
+<span class="hljs-keyword">const</span> Match: IFilter = {
+    all_of: [Position, Color, Shape],
+    any_of: [PlayerID, PlayerName],
+    none_of: [HiddenDisplay],
+};
+
+<span class="hljs-keyword">class</span> MovementSystem <span class="hljs-keyword">extends</span> System {
+    <span class="hljs-keyword">public</span> <span class="hljs-keyword">static</span> Update(admin: EntityAdmin, deltatime: <span class="hljs-built_in">number</span>): <span class="hljs-built_in">void</span> {
+        <span class="hljs-keyword">for</span> (<span class="hljs-keyword">const</span> pos of admin.GetComponentsByTuple(Position, Velocity)) {
+            <span class="hljs-keyword">const</span> vel: Velocity = pos.SureSibling(Velocity);
+            pos.x += vel.vx * deltatime;
+            pos.y += vel.vy * deltatime;
+        }
+    }
+}
+
+<span class="hljs-keyword">class</span> RendererSystem <span class="hljs-keyword">extends</span> System {
+    <span class="hljs-keyword">public</span> <span class="hljs-keyword">static</span> Update(admin: EntityAdmin, deltatime: <span class="hljs-built_in">number</span>): <span class="hljs-built_in">void</span> {
+        <span class="hljs-keyword">for</span> (<span class="hljs-keyword">const</span> ent of admin.GetEnttsByFilter(Match)) {
+            <span class="hljs-keyword">const</span> pos: Position = admin.SureComponentByEntity(ent, Position);
+            <span class="hljs-keyword">const</span> color: Color = admin.SureComponentByEntity(ent, Color);
+            <span class="hljs-keyword">const</span> shape: Shape = pos.SureSibling(Shape);
+            <span class="hljs-keyword">if</span> (admin.HasComponent(ent, HiddenDisplay)) {
+                <span class="hljs-built_in">console</span>.log(<span class="hljs-string">"won't print this message..."</span>);
+            } <span class="hljs-keyword">else</span> {
+                <span class="hljs-built_in">console</span>.log(<span class="hljs-string">"yes, the entity has not HiddenDisplay components."</span>);
+            }
+            <span class="hljs-comment">// do something for RendererSystem ...</span>
+            <span class="hljs-keyword">if</span> (pos.x &gt; <span class="hljs-number">6</span>) {
+                <span class="hljs-comment">// ...</span>
+            }
+        }
+    }
+}
+
+<span class="hljs-keyword">const</span> admin = <span class="hljs-keyword">new</span> EntityAdmin();
+admin.AddWatchings(Match);
+admin.start();
+
+admin.CreateEntity(<span class="hljs-keyword">new</span> Position(<span class="hljs-number">22</span>, <span class="hljs-number">33</span>), <span class="hljs-keyword">new</span> Color(), <span class="hljs-keyword">new</span> Shape(), <span class="hljs-keyword">new</span> PlayerID());
+admin.CreateEntity(<span class="hljs-keyword">new</span> PlayerID());
+<span class="hljs-keyword">const</span> ent = admin.CreateEntity();
+admin.AssignComponents(ent, <span class="hljs-keyword">new</span> Shape(), <span class="hljs-keyword">new</span> Color());
+admin.DeleteEntity(ent);
+
+setInterval(<span class="hljs-function"><span class="hljs-params">()</span> =&gt;</span> { admin.UpdateSystems(); }, <span class="hljs-number">200</span>);
+</code></pre>
 			</div>
 		</div>
 		<div class="col-4 col-menu menu-sticky-wrap menu-highlight">

@@ -12,15 +12,22 @@
 ```bash
 $ npm install lipstick-ecs --save
 ```
+## Introduction
+lipstick-ECS is a tiny ECS framework for js or ts especially. It is easy to use because of good generic constraints implemented by full use of [Generics of Typescript](http://www.typescriptlang.org/docs/handbook/generics.html).
 
->This is a big change from 0.1.4 to ^0.2.0. And documentation for the ^0.2.0 version is not ready yet.
+I try to make it support iteration of complex component combinations and keep it performant as possible. 
+But there are still some unsatisfactory currently:
+> * If the number of entities exceeds 100k, it is better not to choose lipstick-ecs at present.
+> * The most consumptive operation is assigning a being [watched](https://superztf.github.io/lipstick-ECS/classes/entityadmin.html#addwatchings) component.
+> * Assigning 22k being watched components takes 70ms.(10ms to create 22k component object)
+> * Test in CPU: 3.40GHz Node: v10.11.0
 
-* [Source Code](https://github.com/superztf/lipstick-ECS/tree/watching_components)
+## Getting Started
 * [ECS Concept](https://en.wikipedia.org/wiki/Entity%E2%80%93component%E2%80%93system)
 * [Documentation](https://superztf.github.io/lipstick-ECS/globals.html)
 * [See a real example](https://github.com/superztf/ECS-example)
 
-# Example Code
+## Example Code
 ```typescript
 import { EntityAdmin, System, Component, IFilter } from "lipstick-ecs";
 
@@ -67,7 +74,7 @@ class RendererSystem extends System {
         for (const ent of admin.GetEnttsByFilter(Match)) {
             const pos: Position = admin.SureComponentByEntity(ent, Position);
             const color: Color = admin.SureComponentByEntity(ent, Color);
-            const shape: Shape = admin.SureComponentByEntity(ent, Shape);
+            const shape: Shape = pos.SureSibling(Shape);
             if (admin.HasComponent(ent, HiddenDisplay)) {
                 console.log("won't print this message...");
             } else {
@@ -92,6 +99,5 @@ admin.AssignComponents(ent, new Shape(), new Color());
 admin.DeleteEntity(ent);
 
 setInterval(() => { admin.UpdateSystems(); }, 200);
-
 
 ```
