@@ -145,8 +145,11 @@ export class EntityAdmin {
     public CreateEntity(...args: Component[]): Entity {
         const new_ent = ++this.next_entity;
         this.entities.set(new_ent, new Map());
+        this.entity_cidmap.set(new_ent, 0);
         if (args.length > 0) {
             this.AssignComponents(new_ent, ...args);
+        } else {
+            this.afterMultiComptChange(new_ent);
         }
         return new_ent;
     }
@@ -253,11 +256,7 @@ export class EntityAdmin {
                             effect_cls = c.constructor as ComponentType;
                         }
                         ++effect_cnt;
-                        let cidmap: number = 0;
-                        const oldcid = this.entity_cidmap.get(e);
-                        if (oldcid) {
-                            cidmap = oldcid;
-                        }
+                        let cidmap = this.entity_cidmap.get(e) as number;
                         cidmap |= 1 << cls.id;
                         this.entity_cidmap.set(e, cidmap);
                     }
