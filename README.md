@@ -103,3 +103,5 @@ admin.DeleteEntity(ent);
 setInterval(() => { admin.UpdateSystems(); }, 200);
 
 ```
+## Future
+I'm going to refactor code to improve performance of lipstick-ecs. And it's interfaces won't be changed as possible.
