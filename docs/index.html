@@ -150,6 +150,8 @@
 
 <span class="hljs-keyword">const</span> admin = <span class="hljs-keyword">new</span> EntityAdmin();
 admin.AddWatchings(Match);
+admin.AddSystem(MovementSystem);
+admin.AddSystem(RendererSystem);
 admin.start();
 
 admin.CreateEntity(<span class="hljs-keyword">new</span> Position(<span class="hljs-number">22</span>, <span class="hljs-number">33</span>), <span class="hljs-keyword">new</span> Color(), <span class="hljs-keyword">new</span> Shape(), <span class="hljs-keyword">new</span> PlayerID());

@@ -1,6 +1,6 @@
 {
   "name": "lipstick-ecs",
-  "version": "0.2.4",
+  "version": "0.2.5",
   "description": "A tiny and easy to use entity-component-system framework",
   "keywords": [
     "entity component system",

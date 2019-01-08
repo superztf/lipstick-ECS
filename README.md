@@ -90,6 +90,8 @@ class RendererSystem extends System {
 
 const admin = new EntityAdmin();
 admin.AddWatchings(Match);
+admin.AddSystem(MovementSystem);
+admin.AddSystem(RendererSystem);
 admin.start();
 
 admin.CreateEntity(new Position(22, 33), new Color(), new Shape(), new PlayerID());
