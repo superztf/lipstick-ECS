@@ -4,6 +4,8 @@ import { throwError } from "./_utils";
 import { FilterComponents, IFilterID, CheckFilter } from "./_filter";
 
 export declare type Entity = number;
+export declare type ComponentID = number;
+export declare type ComponentBitSet = number;
 
 /**
  * The manager of a World. It cantains systems, entities and the components.
@@ -13,24 +15,20 @@ export declare type Entity = number;
  * @class EntityAdmin
  */
 export class EntityAdmin {
-    protected next_entity: Entity = 0;
-    protected entities: Map<Entity, Map<ComponentType, Component>> = new Map();
-    protected comptowners: Map<ComponentType, Set<Entity>> = new Map();
-    protected comptcontain: Map<ComponentType, Set<Component>> = new Map();
+    protected empty_set = new Set();
     protected systems: Array<{ priority: number, system: SystemType }> = [];
     protected deferments: Array<{ func: Function, args: any[] }> = [];
     protected pubcoms: Map<ComponentType, Component> = new Map();
     protected lastupdate: number = 0;
     protected running: boolean = false;
-    protected watch_open: boolean = false;
-    protected watch_compts: Map<ComponentType, Set<IFilter>> = new Map();
-    protected watch_ents: Map<IFilter, Set<Entity>> = new Map();
-    protected watch_fid: Map<IFilter, IFilterID> = new Map();
-    protected next_cid: number = 1;
-    protected entity_cidmap: Map<Entity, number> = new Map();
-    protected tuple_cache: Map<number, Set<Component>> = new Map();
-    protected tuple_dirty: Map<ComponentType, boolean> = new Map();
-    protected empty_set: Set<any> = new Set();
+
+    protected next_entity: Entity = 0;
+    protected entities: ComponentBitSet[] = [];
+    protected recycle_entity: Entity[] = [];
+    protected next_comptid: ComponentID = 0;
+    protected components: Component[][] = [];
+    // entities 存 mapcid
+    // components 按 ent 位置存
 
     /**
      * The default running state is false. This method set it true. EntityAdmin.UpdateSystems() can work only in running===true state.
@@ -143,13 +141,13 @@ export class EntityAdmin {
      * @memberof EntityAdmin
      */
     public CreateEntity(...args: Component[]): Entity {
-        const new_ent = ++this.next_entity;
-        this.entities.set(new_ent, new Map());
-        this.entity_cidmap.set(new_ent, 0);
+        let new_ent = this.recycle_entity.pop();
+        if (!new_ent) {
+            new_ent = ++this.next_entity;
+        }
+        this.entities[new_ent] = 0;
         if (args.length > 0) {
             this.AssignComponents(new_ent, ...args);
-        } else {
-            this.afterMultiComptChange(new_ent);
         }
         return new_ent;
     }
@@ -161,20 +159,11 @@ export class EntityAdmin {
      * @memberof EntityAdmin
      */
     public DeleteEntity(e: Entity): void {
-        const coms = this.entities.get(e);
-        if (coms) {
-            for (const cobj of coms.values()) {
-                const ents = this.comptowners.get(cobj.constructor as ComponentType) as Set<number>;
-                ents.delete(e);
-                const compts = this.comptcontain.get(cobj.constructor as ComponentType) as Set<Component>;
-                compts.delete(cobj);
-
+        this.recycle_entity.push(e);
+        for (const list of this.components) {
+            if (list[e]) {
+                (list[e] as any) = undefined;
             }
-            this.entities.delete(e);
-        }
-        this.entity_cidmap.delete(e);
-        for (const entset of this.watch_ents.values()) {
-            entset.delete(e);
         }
     }
 
@@ -184,9 +173,10 @@ export class EntityAdmin {
      * @memberof EntityAdmin
      */
     public ClearAllEntity() {
-        for (const e of this.entities.keys()) {
-            this.DeleteEntity(e);
-        }
+        this.components = [];
+        this.entities = [];
+        this.recycle_entity = [];
+        this.next_entity = 0;
     }
 
     /**
@@ -199,9 +189,9 @@ export class EntityAdmin {
      * @memberof EntityAdmin
      */
     public GetComponentByEntity<T extends Component>(entity: Entity, cclass: CLASS<T>): T | undefined {
-        const coms = this.entities.get(entity);
-        if (coms) {
-            return coms.get(cclass) as T;
+        const list = this.components[cclass.id];
+        if (list) {
+            return list[entity] as T;
         }
     }
 
@@ -213,7 +203,10 @@ export class EntityAdmin {
      * @memberof EntityAdmin
      */
     public ValidEntity(e: Entity): boolean {
-        return this.entities.has(e);
+        if (this.entities[e] === undefined) {
+            return false;
+        }
+        return true;
     }
 
     /**
@@ -224,50 +217,16 @@ export class EntityAdmin {
      * @memberof EntityAdmin
      */
     public AssignComponents(e: Entity, ...cs: Component[]): void {
-        const coms = this.entities.get(e);
-        let effect_cnt = 0;
-        let effect_cls: ComponentType | undefined;
-        if (coms) {
+        if (this.entities[e] !== undefined) {
             for (const c of cs) {
-                if (c.entity) {
-                    throwError(`${c.constructor.name} has been assign to ${c.entity}, cannot assign to ${e} repeatedly.`);
+                const cls = c.constructor as CLASS<Component>;
+                if (!cls.id) {
+                    cls.id = ++this.next_comptid;
+                    this.components[cls.id] = [];
                 }
-                (c as any).m_entity = e;
-                (c as any).m_admin = this;
-                const cls = c.constructor as ComponentType;
-                let ents = this.comptowners.get(cls);
-                if (!ents) {
-                    ents = new Set();
-                    this.comptowners.set(cls, ents);
-                }
-                let cobjs = this.comptcontain.get(cls);
-                if (!cobjs) {
-                    cobjs = new Set();
-                    this.comptcontain.set(cls, cobjs);
-                }
-                ents.add(e);
-                cobjs.add(c);
-                if (!coms.has(cls)) {
-                    if (this.tuple_dirty.has(cls)) {
-                        this.tuple_dirty.set(cls, true);
-                    }
-                    if (this.watch_open && this.watch_compts.has(cls)) {
-                        if (!effect_cnt) {
-                            effect_cls = c.constructor as ComponentType;
-                        }
-                        ++effect_cnt;
-                        let cidmap = this.entity_cidmap.get(e) as number;
-                        cidmap |= 1 << cls.id;
-                        this.entity_cidmap.set(e, cidmap);
-                    }
-                }
-                coms.set(cls, c);
+                this.entities[e] |= (1 << cls.id);
+                this.components[cls.id][e] = c;
             }
-        }
-        if (effect_cnt === 1) {
-            this.afterSingleComptChange(e, effect_cls as ComponentType);
-        } else if (effect_cnt > 1) {
-            this.afterMultiComptChange(e);
         }
     }
 
@@ -280,48 +239,14 @@ export class EntityAdmin {
      * @memberof EntityAdmin
      */
     public RemoveComponents(e: Entity, ...cclass: ComponentType[]) {
-        const coms = this.entities.get(e);
-        if (coms) {
-            for (const c of cclass) {
-                const cobj = coms.get(c);
-                if (cobj) {
-                    coms.delete(c);
-                    const compts = this.comptcontain.get(c) as Set<Component>;
-                    compts.delete(cobj);
+        if (this.entities[e] !== undefined) {
+            for (const cls of cclass) {
+                const list = this.components[cls.id];
+                if (list && list[e]) {
+                    this.entities[e] ^= (1 << cls.id);
+                    (list[e] as any) = undefined;
                 }
             }
-        }
-
-        let effect_cnt = 0;
-        let effect_cls: ComponentType | undefined;
-        for (const cls of cclass) {
-            const ents = this.comptowners.get(cls);
-            if (ents) {
-                const ret = ents.delete(e);
-                if (ret) {
-                    if (this.tuple_dirty.has(cls)) {
-                        this.tuple_dirty.set(cls, true);
-                    }
-                    if (this.watch_open && this.watch_compts.has(cls)) {
-                        if (!effect_cnt) {
-                            effect_cls = cls;
-                        }
-                        ++effect_cnt;
-                        let cidmap = this.entity_cidmap.get(e) as number;
-                        const pos = cls.id;
-                        if (cidmap & (1 << pos)) {
-                            cidmap ^= 1 << pos;
-                            this.entity_cidmap.set(e, cidmap);
-                        }
-                    }
-                }
-
-            }
-        }
-        if (effect_cnt === 1) {
-            this.afterSingleComptChange(e, effect_cls as ComponentType);
-        } else if (effect_cnt > 1) {
-            this.afterMultiComptChange(e);
         }
     }
 
@@ -334,8 +259,8 @@ export class EntityAdmin {
      * @memberof EntityAdmin
      */
     public HasComponent(e: Entity, c: ComponentType): boolean {
-        const coms = this.entities.get(e);
-        if (coms && coms.has(c)) {
+        const bitset = this.entities[e];
+        if (bitset && (bitset & 1 << c.id)) {
             return true;
         }
         return false;
@@ -350,12 +275,16 @@ export class EntityAdmin {
      * @memberof EntityAdmin
      */
     public GetComponentSize(cclass: ComponentType): number {
-        const compts = this.comptcontain.get(cclass);
-        if (compts) {
-            return compts.size;
-        } else {
-            return 0;
+        const list = this.components[cclass.id];
+        if (list) {
+            let cnt = 0;
+            for (const compt of list) {
+                cnt += 1;
+            }
+            return cnt;
         }
+        return 0;
+
     }
 
     /**
@@ -366,12 +295,14 @@ export class EntityAdmin {
      * @returns {IterableIterator<T>} Iterator of component.
      * @memberof EntityAdmin
      */
-    public GetComponents<T extends Component>(cclass: CLASS<T>): IterableIterator<T> {
-        const compts = this.comptcontain.get(cclass);
-        if (compts) {
-            return compts.values() as IterableIterator<T>;
-        } else {
-            return this.empty_set.values();
+    public *GetComponents<T extends Component>(cclass: CLASS<T>): IterableIterator<T> {
+        const list = this.components[cclass.id];
+        if (list) {
+            for (const compt of list) {
+                if (compt) {
+                    yield compt as T;
+                }
+            }
         }
     }
 
@@ -389,47 +320,22 @@ export class EntityAdmin {
      * ```
      *
      * @template T
-     * @param {...[CLASS<T>, ...ComponentType[]]} cclass A list of component class.
+     * @param {...[CLASS<T>, ...ComponentType[]]} cclass A list of component class. Require at least two element.
      * @returns {IterableIterator<T>} The iterator of T component instances.
      * @memberof EntityAdmin
      */
-    public GetComponentsByTuple<T extends Component>(...cclass: [CLASS<T>, ...ComponentType[]]): IterableIterator<T> {
-        if (cclass.length <= 1) {
-            return this.GetComponents(cclass[0]);
+    public *GetComponentsByTuple<T extends Component>(...cclass: [CLASS<T>, ComponentType, ...ComponentType[]]): IterableIterator<T> {
+        let tuple_bitset = 0;
+        const first = cclass[0];
+        for (const cls of cclass) {
+            tuple_bitset |= (1 << cls.id);
         }
-        const cache = this.tryGetTupleCache(cclass);
-        if (cache) {
-            return cache.values() as IterableIterator<T>;
-        }
-        interface ICInfo { type: CLASS<Component>; len: number; }
-        const top = cclass[0];
-        const length_info: ICInfo[] = [];
-        for (const c of cclass) {
-            const set = this.comptowners.get(c);
-            if (!set) {
-                return this.empty_set.values();
-            }
-            length_info.push({ type: c, len: set.size });
-        }
-        length_info.sort((a, b) => {
-            return a.len - b.len;
-        });
-
-        const list = new Set();
-        for (const c1 of this.GetComponents(top)) {
-            let pass = true;
-            for (const info of length_info) {
-                if (!this.GetComponentByEntity(c1.entity, info.type)) {
-                    pass = false;
-                    break;
-                }
-            }
-            if (pass) {
-                list.add(c1);
+        for (let ent: Entity = 1; ent < this.entities.length; ++ent) {
+            const compt_bitset = this.entities[ent];
+            if (compt_bitset && (tuple_bitset === (compt_bitset & tuple_bitset))) {
+                yield this.components[first.id][ent] as T;
             }
         }
-        this.updateTupleCache(cclass, list);
-        return list.values();
     }
 
     /**
@@ -441,48 +347,6 @@ export class EntityAdmin {
      * @memberof EntityAdmin
      */
     public AddWatchings(...fts: [IFilter, ...IFilter[]]) {
-        if (this.entities.size > 0) {
-            throwError("AddWatching should be used before CreateEntity");
-        }
-        if (!this.watch_open) { this.watch_open = true; }
-        for (const f of fts) {
-            CheckFilter(f);
-            for (const c of FilterComponents(f)) {
-                let set = this.watch_compts.get(c);
-                if (!set) {
-                    set = new Set();
-                    this.watch_compts.set(c, set);
-                }
-                set.add(f);
-                if (!c.id) {
-                    c.id = this.next_cid++;
-                }
-            }
-            if (!this.watch_fid.has(f)) {
-                let all_id = 0;
-                let none_id = 0;
-                let any_id = 0;
-                if (f.all_of) {
-                    for (const c of f.all_of) {
-                        all_id |= 1 << c.id;
-                    }
-                }
-                if (f.any_of) {
-                    for (const c of f.any_of) {
-                        any_id |= 1 << c.id;
-                    }
-                }
-                if (f.none_of) {
-                    for (const c of f.none_of) {
-                        none_id |= 1 << c.id;
-                    }
-                }
-                this.watch_fid.set(f, { all_id, none_id, any_id });
-            }
-            if (!this.watch_ents.has(f)) {
-                this.watch_ents.set(f, new Set());
-            }
-        }
     }
 
     /**
@@ -496,8 +360,7 @@ export class EntityAdmin {
      * @memberof EntityAdmin
      */
     public SureComponentByEntity<T extends Component>(entity: Entity, cclass: CLASS<T>): T {
-        const coms = this.entities.get(entity);
-        return (coms as Map<ComponentType, Component>).get(cclass) as T;
+        return new cclass();
     }
 
     /**
@@ -510,12 +373,8 @@ export class EntityAdmin {
      * @memberof EntityAdmin
      */
     public GetEnttsByFilter(f: IFilter): IterableIterator<Entity> {
-        const set = this.watch_ents.get(f);
-        if (set) {
-            return set.values();
-        } else {
-            return this.empty_set.values();
-        }
+        return this.empty_set.values();
+
     }
 
     /**
@@ -528,78 +387,10 @@ export class EntityAdmin {
      * @memberof EntityAdmin
      */
     public MatchCountByFilter(f: IFilter): number {
-        const set = this.watch_ents.get(f);
-        if (set) {
-            return set.size;
-        }
         return 0;
     }
 
     protected matchFilter(e: Entity, fobj: IFilter): boolean {
-        const entity_cid = this.entity_cidmap.get(e) as number;
-        const fid = this.watch_fid.get(fobj) as IFilterID;
-
-        if (fid.all_id !== (fid.all_id & entity_cid)) {
-            return false;
-        }
-        if (fid.any_id) {
-            if (!(fid.any_id & entity_cid)) {
-                return false;
-            }
-        }
-        if (fid.none_id & entity_cid) {
-            return false;
-        }
-        return true;
-    }
-
-    protected afterMultiComptChange(e: Entity) {
-        for (const [fobj, set] of this.watch_ents.entries()) {
-            if (this.matchFilter(e, fobj)) {
-                set.add(e);
-            } else {
-                set.delete(e);
-            }
-        }
-    }
-
-    protected afterSingleComptChange(e: Entity, cclass: ComponentType) {
-        const fobjset = this.watch_compts.get(cclass) as Set<IFilter>;
-        for (const fobj of fobjset.values()) {
-            const set = this.watch_ents.get(fobj) as Set<number>;
-            if (this.matchFilter(e, fobj)) {
-                set.add(e);
-            } else {
-                set.delete(e);
-            }
-        }
-    }
-
-    protected tryGetTupleCache(listc: ComponentType[]): void | Set<Component> {
-        let tupleid = 0;
-        for (const c of listc) {
-            if (!this.tuple_dirty.has(c)) {
-                this.tuple_dirty.set(c, true);
-            }
-            if (!c.id) {
-                c.id = this.next_cid++;
-            }
-        }
-        for (const c of listc) {
-            if (this.tuple_dirty.get(c)) {
-                return;
-            }
-            tupleid |= 1 << c.id;
-        }
-        return this.tuple_cache.get(tupleid);
-    }
-
-    protected updateTupleCache(listc: ComponentType[], set: Set<Component>) {
-        let tupleid = 0;
-        for (const c of listc) {
-            tupleid |= 1 << c.id;
-            this.tuple_dirty.set(c, false);
-        }
-        this.tuple_cache.set(tupleid, set);
+        return false;
     }
 }
