@@ -1,11 +1,11 @@
 import { Component } from "./component";
 import { present, CLASS, IFilter, ComponentType, SystemType } from "./utils";
 import { throwError } from "./_utils";
-import { FilterComponents, IFilterID, CheckFilter } from "./_filter";
+import { Filter, FilterType } from "./filter";
 
 export declare type Entity = number;
 export declare type ComponentID = number;
-export declare type ComponentBitSet = number;
+export declare type ComponentBitMap = number;
 
 /**
  * The manager of a World. It cantains systems, entities and the components.
@@ -15,7 +15,6 @@ export declare type ComponentBitSet = number;
  * @class EntityAdmin
  */
 export class EntityAdmin {
-    protected empty_set = new Set();
     protected systems: Array<{ priority: number, system: SystemType }> = [];
     protected deferments: Array<{ func: Function, args: any[] }> = [];
     protected pubcoms: Map<ComponentType, Component> = new Map();
@@ -23,12 +22,12 @@ export class EntityAdmin {
     protected running: boolean = false;
 
     protected next_entity: Entity = 0;
-    protected entities: ComponentBitSet[] = [];
+    protected entities: ComponentBitMap[] = [];
+    protected compt_index: number[][] = [];
     protected recycle_entity: Entity[] = [];
     protected next_comptid: ComponentID = 0;
     protected components: Component[][] = [];
-    // entities 存 mapcid
-    // components 按 ent 位置存
+    protected entset: Set<Entity> = new Set();
 
     /**
      * The default running state is false. This method set it true. EntityAdmin.UpdateSystems() can work only in running===true state.
@@ -146,6 +145,8 @@ export class EntityAdmin {
             new_ent = ++this.next_entity;
         }
         this.entities[new_ent] = 0;
+        this.compt_index[new_ent] = [];
+        this.entset.add(new_ent);
         if (args.length > 0) {
             this.AssignComponents(new_ent, ...args);
         }
@@ -159,10 +160,19 @@ export class EntityAdmin {
      * @memberof EntityAdmin
      */
     public DeleteEntity(e: Entity): void {
+        if (this.entities[e] === undefined) {
+            return;
+        }
+        (this.entities[e] as any) = undefined;
         this.recycle_entity.push(e);
-        for (const list of this.components) {
-            if (list[e]) {
-                (list[e] as any) = undefined;
+        this.entset.delete(e);
+        const list = this.compt_index[e];
+        for (let i = 1; i < list.length; ++i) {// 测试entries和这种方式的迭代效率对比
+            const index = list[i];
+            if (index) {
+                const comobjs = this.components[i];
+                comobjs[index] = comobjs[comobjs.length - 1];
+                comobjs.pop();
             }
         }
     }
@@ -173,26 +183,14 @@ export class EntityAdmin {
      * @memberof EntityAdmin
      */
     public ClearAllEntity() {
-        this.components = [];
+        for (const k of this.components.keys()) {
+            this.components[k] = [];
+        }
         this.entities = [];
         this.recycle_entity = [];
+        this.compt_index = [];
         this.next_entity = 0;
-    }
-
-    /**
-     * Get an entity's component object.
-     *
-     * @template T
-     * @param {Entity} Entity Entity ID.
-     * @param {CLASS<T>} cclass A component class.
-     * @returns {(T | undefined)} The component instance or undefined if the entity doesn't own this type of component.
-     * @memberof EntityAdmin
-     */
-    public GetComponentByEntity<T extends Component>(entity: Entity, cclass: CLASS<T>): T | undefined {
-        const list = this.components[cclass.id];
-        if (list) {
-            return list[entity] as T;
-        }
+        this.entset.clear();
     }
 
     /**
@@ -210,6 +208,36 @@ export class EntityAdmin {
     }
 
     /**
+     * Get the number of all entities.
+     *
+     * @readonly
+     * @type {number}
+     * @memberof EntityAdmin
+     */
+    public get entitycount(): number {
+        return this.entset.size;
+    }
+
+    /**
+     * Get an entity's component object.
+     *
+     * @template T
+     * @param {Entity} Entity Entity ID.
+     * @param {CLASS<T>} cclass A component class.
+     * @returns {(T | undefined)} The component instance or undefined if the entity doesn't own this type of component.
+     * @memberof EntityAdmin
+     */
+    public GetComponentByEntity<T extends Component>(entity: Entity, cclass: CLASS<T>): T | undefined {
+        if (this.entities[entity] === undefined) {
+            return;
+        }
+        const index = this.compt_index[entity][cclass.id];
+        if (index !== undefined) {
+            return this.components[cclass.id][index] as T;
+        }
+    }
+
+    /**
      * Assign component objects to an entity. If you assign the same type component object to an entity, the latter will replace the former.
      *
      * @param {Entity} e Entity ID.
@@ -219,13 +247,20 @@ export class EntityAdmin {
     public AssignComponents(e: Entity, ...cs: Component[]): void {
         if (this.entities[e] !== undefined) {
             for (const c of cs) {
+                if (c.entity) {
+                    throwError(`${c.constructor.name} has been assign to ${c.entity}, cannot assign to ${e} repeatedly.`);
+                }
                 const cls = c.constructor as CLASS<Component>;
                 if (!cls.id) {
                     cls.id = ++this.next_comptid;
                     this.components[cls.id] = [];
                 }
+                const listc = this.components[cls.id];
+                (c as any).m_entity = e;
+                (c as any).m_admin = this;
                 this.entities[e] |= (1 << cls.id);
-                this.components[cls.id][e] = c;
+                this.compt_index[e][cls.id] = listc.length;
+                listc.push(c);
             }
         }
     }
@@ -241,11 +276,20 @@ export class EntityAdmin {
     public RemoveComponents(e: Entity, ...cclass: ComponentType[]) {
         if (this.entities[e] !== undefined) {
             for (const cls of cclass) {
-                const list = this.components[cls.id];
-                if (list && list[e]) {
-                    this.entities[e] ^= (1 << cls.id);
-                    (list[e] as any) = undefined;
+                const index = this.compt_index[e][cls.id];
+                if (index === undefined) {
+                    continue;
                 }
+                const list = this.components[cls.id];
+                const lastobj = list[list.length - 1];
+                list[index] = lastobj;
+                list.pop();
+                if (lastobj.entity !== e) {
+                    this.compt_index[lastobj.entity][cls.id] = index;
+                }
+                this.entities[e] ^= (1 << cls.id);
+                (this.compt_index[e][cls.id] as any) = undefined;
+
             }
         }
     }
@@ -259,11 +303,26 @@ export class EntityAdmin {
      * @memberof EntityAdmin
      */
     public HasComponent(e: Entity, c: ComponentType): boolean {
-        const bitset = this.entities[e];
-        if (bitset && (bitset & 1 << c.id)) {
+        const bitmap = this.entities[e];
+        if (bitmap && (bitmap & 1 << c.id)) {
             return true;
         }
         return false;
+    }
+
+    public TransferComponent(from: Entity, to: Entity, cls: ComponentType): boolean {
+        if (this.entities[from] === undefined || this.entities[to] === undefined) {
+            return false;
+        }
+        const index = this.compt_index[from][cls.id];
+        if (!index) {
+            return false;
+        }
+        (this.compt_index[from][cls.id] as any) = undefined;
+        this.entities[from] ^= (1 << cls.id);
+        this.compt_index[to][cls.id] = index;
+        this.entities[to] |= (1 << cls.id);
+        return true;
     }
 
     /**
@@ -277,11 +336,7 @@ export class EntityAdmin {
     public GetComponentSize(cclass: ComponentType): number {
         const list = this.components[cclass.id];
         if (list) {
-            let cnt = 0;
-            for (const compt of list) {
-                cnt += 1;
-            }
-            return cnt;
+            return list.length;
         }
         return 0;
 
@@ -295,14 +350,12 @@ export class EntityAdmin {
      * @returns {IterableIterator<T>} Iterator of component.
      * @memberof EntityAdmin
      */
-    public *GetComponents<T extends Component>(cclass: CLASS<T>): IterableIterator<T> {
+    public GetComponents<T extends Component>(cclass: CLASS<T>): IterableIterator<T> {
         const list = this.components[cclass.id];
         if (list) {
-            for (const compt of list) {
-                if (compt) {
-                    yield compt as T;
-                }
-            }
+            return list.values() as IterableIterator<T>;
+        } else {
+            return [].values();
         }
     }
 
@@ -324,18 +377,25 @@ export class EntityAdmin {
      * @returns {IterableIterator<T>} The iterator of T component instances.
      * @memberof EntityAdmin
      */
-    public *GetComponentsByTuple<T extends Component>(...cclass: [CLASS<T>, ComponentType, ...ComponentType[]]): IterableIterator<T> {
-        let tuple_bitset = 0;
+    public GetComponentsByTuple<T extends Component>(...cclass: [CLASS<T>, ComponentType, ...ComponentType[]]): IterableIterator<T> {
         const first = cclass[0];
-        for (const cls of cclass) {
-            tuple_bitset |= (1 << cls.id);
+        const listfirst = this.components[first.id];
+        if (!listfirst) {
+            return [].values();
         }
-        for (let ent: Entity = 1; ent < this.entities.length; ++ent) {
-            const compt_bitset = this.entities[ent];
-            if (compt_bitset && (tuple_bitset === (compt_bitset & tuple_bitset))) {
-                yield this.components[first.id][ent] as T;
+        let tuple_bitmap = 0;
+        for (const cls of cclass) {
+            tuple_bitmap |= (1 << cls.id);
+        }
+        const retlist: Component[] = [];
+        for (const c of listfirst) {
+            const ent = c.entity;
+            const compt_bitmap = this.entities[ent];
+            if (compt_bitmap && (tuple_bitmap === (compt_bitmap & tuple_bitmap))) {
+                retlist.push(this.components[first.id][this.compt_index[ent][first.id]]);
             }
         }
+        return retlist.values() as IterableIterator<T>;
     }
 
     /**
@@ -346,7 +406,24 @@ export class EntityAdmin {
      * @param {...[IFilter, ...IFilter[]]} fts List of filters.
      * @memberof EntityAdmin
      */
-    public AddWatchings(...fts: [IFilter, ...IFilter[]]) {
+    public AddWatchings(...fts: [FilterType, ...FilterType[]]) {
+        const calbit = (listc: ComponentType[]): number => {
+            let bits = 0;
+            for (const cls of listc) {
+                if (!cls.id) {
+                    cls.id = ++this.next_comptid;
+                    this.components[cls.id] = [];
+                }
+                bits |= 1 << cls.id;
+            }
+            return bits;
+        };
+
+        for (const f of fts) {
+            f.all_bit = calbit(f.all_of);
+            f.any_bit = calbit(f.any_of);
+            f.none_bit = calbit(f.none_of);
+        }
     }
 
     /**
@@ -360,7 +437,7 @@ export class EntityAdmin {
      * @memberof EntityAdmin
      */
     public SureComponentByEntity<T extends Component>(entity: Entity, cclass: CLASS<T>): T {
-        return new cclass();
+        return this.GetComponentByEntity(entity, cclass) as T;
     }
 
     /**
@@ -372,9 +449,24 @@ export class EntityAdmin {
      * @returns {IterableIterator<Entity>} Iterator of entities.
      * @memberof EntityAdmin
      */
-    public GetEnttsByFilter(f: IFilter): IterableIterator<Entity> {
-        return this.empty_set.values();
-
+    public GetEnttsByFilter(fcls: FilterType): IterableIterator<Entity> {
+        const retlist: Entity[] = [];
+        for (const ent of this.entset.values()) {
+            const entity_cid = this.entities[ent];
+            if (fcls.all_bit !== (fcls.all_bit & entity_cid)) {
+                continue;
+            }
+            if (fcls.any_bit) {
+                if (!(fcls.any_bit & entity_cid)) {
+                    continue;
+                }
+            }
+            if (fcls.none_bit & entity_cid) {
+                continue;
+            }
+            retlist.push(ent);
+        }
+        return retlist.values();
     }
 
     /**
@@ -386,11 +478,42 @@ export class EntityAdmin {
      * @returns {number}
      * @memberof EntityAdmin
      */
-    public MatchCountByFilter(f: IFilter): number {
-        return 0;
+    public MatchCountByFilter(fcls: FilterType): number {
+        let cnt = 0;
+        for (const ent of this.entset.values()) {
+            const entity_cid = this.entities[ent];
+            if (fcls.all_bit !== (fcls.all_bit & entity_cid)) {
+                continue;
+            }
+            if (fcls.any_bit) {
+                if (!(fcls.any_bit & entity_cid)) {
+                    continue;
+                }
+            }
+            if (fcls.none_bit & entity_cid) {
+                continue;
+            }
+            cnt += 1;
+        }
+        return cnt;
     }
 
-    protected matchFilter(e: Entity, fobj: IFilter): boolean {
-        return false;
+    public MatchFilter(ent: Entity, fcls: FilterType): boolean {
+        const entity_cid = this.entities[ent];
+        if (entity_cid === undefined) {
+            return false;
+        }
+        if (fcls.all_bit !== (fcls.all_bit & entity_cid)) {
+            return false;
+        }
+        if (fcls.any_bit) {
+            if (!(fcls.any_bit & entity_cid)) {
+                return false;
+            }
+        }
+        if (fcls.none_bit & entity_cid) {
+            return false;
+        }
+        return true;
     }
 }

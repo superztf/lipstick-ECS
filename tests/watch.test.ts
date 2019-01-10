@@ -3,35 +3,23 @@ import { SimpleComptA, SimpleComptB, SimpleComptC, SimpleComptD, SimpleComptE, S
 import { Match_1, Match_2, Match_3, Match_4, Match_5, Match_6, Match_7 } from "./filters";
 import { IFilter, CLASS } from "../src/utils";
 import { Component } from "../src/component";
+import { Filter, FilterType } from "../src/filter";
 
 const admin = new EntityAdmin();
 
 describe("test watch funtion", () => {
 
     it("AddWatching", () => {
-        admin.CreateEntity();
-        admin.CreateEntity();
-        admin.CreateEntity();
-        expect(() => {
-            admin.AddWatchings(Match_1, Match_2, Match_3, Match_4, Match_5, Match_6, Match_7);
-        }).toThrowError(/^ECS-ERROR:/);
-        admin.ClearAllEntity();
         admin.AddWatchings(Match_1, Match_2, Match_3, Match_4, Match_5, Match_6, Match_7);
-        const new_match: IFilter = { all_of: [SimpleComptA], none_of: [SimpleComptA] };
-        expect(() => {
-            admin.AddWatchings(new_match);
-        }).toThrowError(/^ECS-ERROR:/);
     });
     it("MatchCountByFilter", () => {
         admin.CreateEntity(new SimpleComptA(), new SimpleComptB(), new SimpleComptC(), new SimpleComptD());
         expect(admin.MatchCountByFilter(Match_7)).toBe(1);
-        const new_match_7 = JSON.parse(JSON.stringify(Match_7));
-        expect(admin.MatchCountByFilter(new_match_7)).toBe(0);
 
     });
     it("GetEnttsByFilter", () => {
         admin.ClearAllEntity();
-        function get_ents(f: IFilter) {
+        function get_ents(f: FilterType) {
             const list = [];
             for (const ent of admin.GetEnttsByFilter(f)) {
                 list.push(ent);
@@ -160,13 +148,8 @@ describe("test watch funtion", () => {
     });
     it("fix coverage", () => {
         const new_match: IFilter = { all_of: [SimpleComptA, SimpleComptB] };
-        for (const x of admin.GetEnttsByFilter(new_match)) {
-            throw (new Error());
-        }
+
         admin.ClearAllEntity();
         admin.AddWatchings(Match_1, Match_1);
-        expect(() => {
-            admin.AddWatchings({});
-        }).toThrowError(/^ECS-ERROR:/);
     });
 });

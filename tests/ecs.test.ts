@@ -38,7 +38,7 @@ class ComponentE extends Component {
 
 class SystemA extends System {
     public static Update(admin: EntityAdmin, timeStep: number): void {
-        for (const c of admin.GetComponentsByTuple(ComponentA)) {
+        for (const c of admin.GetComponents(ComponentA)) {
 
         }
     }

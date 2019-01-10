@@ -1,35 +1,37 @@
 import { IFilter } from "../src/utils";
 import { SimpleComptA, SimpleComptB, SimpleComptC, SimpleComptD, SimpleComptE, SimpleComptF, SimpleComptG } from "./components";
+import { Filter } from "../src/filter";
+// tslint:disable
 
-export const Match_1: IFilter = {
-    all_of: [SimpleComptA, SimpleComptB, SimpleComptC],
-};
+export class Match_1 extends Filter {
+    protected static readonly _all_of = [SimpleComptA, SimpleComptB, SimpleComptC];
+}
 
-export const Match_2: IFilter = {
-    none_of: [SimpleComptA, SimpleComptB, SimpleComptC],
-};
+export class Match_2 extends Filter {
+    protected static readonly _none_of = [SimpleComptA, SimpleComptB, SimpleComptC];
+}
 
-export const Match_3: IFilter = {
-    any_of: [SimpleComptA, SimpleComptB, SimpleComptC],
-};
+export class Match_3 extends Filter {
+    protected static readonly _any_of = [SimpleComptA, SimpleComptB, SimpleComptC];
+}
 
-export const Match_4: IFilter = {
-    all_of: [SimpleComptA, SimpleComptB, SimpleComptC],
-    any_of: [SimpleComptD, SimpleComptE],
-};
+export class Match_4 extends Filter {
+    static _all_of = [SimpleComptA, SimpleComptB, SimpleComptC];
+    static _any_of = [SimpleComptD, SimpleComptE];
+}
 
-export const Match_5: IFilter = {
-    all_of: [SimpleComptA, SimpleComptB, SimpleComptC],
-    none_of: [SimpleComptD, SimpleComptE],
-};
+export class Match_5 extends Filter {
+    static _all_of = [SimpleComptA, SimpleComptB, SimpleComptC];
+    static _none_of = [SimpleComptD, SimpleComptE];
+}
 
-export const Match_6: IFilter = {
-    any_of: [SimpleComptA, SimpleComptB, SimpleComptC],
-    none_of: [SimpleComptD, SimpleComptE],
-};
+export class Match_6 extends Filter {
+    static _any_of = [SimpleComptA, SimpleComptB, SimpleComptC];
+    static _none_of = [SimpleComptD, SimpleComptE];
+}
 
-export const Match_7: IFilter = {
-    all_of: [SimpleComptA, SimpleComptB, SimpleComptC],
-    any_of: [SimpleComptD, SimpleComptE],
-    none_of: [SimpleComptF, SimpleComptG],
-};
+export class Match_7 extends Filter {
+    static _all_of = [SimpleComptA, SimpleComptB, SimpleComptC];
+    static _any_of = [SimpleComptD, SimpleComptE];
+    static _none_of = [SimpleComptF, SimpleComptG];
+}
